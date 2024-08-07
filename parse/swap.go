@@ -1,4 +1,4 @@
-package raydium_parse
+package parse
 
 import "math"
 

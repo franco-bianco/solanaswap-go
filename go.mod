@@ -1,4 +1,4 @@
-module pumpfun-parse
+module sol-swap-parse
 
 go 1.22.3
 

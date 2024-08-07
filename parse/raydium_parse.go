@@ -1,4 +1,4 @@
-package raydium_parse
+package parse
 
 import (
 	"encoding/binary"
@@ -42,6 +42,10 @@ type RaydiumParser struct {
 }
 
 func NewRaydiumTransactionParser(tx *rpc.GetTransactionResult) (*RaydiumParser, error) {
+
+	if tx.Meta.Err != nil { // reject failed transactions
+		return nil, fmt.Errorf("failed transaction")
+	}
 
 	txInfo, err := tx.Transaction.GetTransaction()
 	if err != nil {
