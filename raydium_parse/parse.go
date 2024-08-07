@@ -160,7 +160,6 @@ type TokenInfo struct {
 	Decimals uint8
 }
 
-// Now, let's update the function to use this new struct
 func (p *RaydiumParser) extractSPLTokenAddresses() (map[string]TokenInfo, error) {
 	splTokenAddresses := make(map[string]TokenInfo)
 

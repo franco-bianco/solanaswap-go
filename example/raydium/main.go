@@ -37,6 +37,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("error parsing raydium tx: %s", err)
 	}
-	data, _ := json.MarshalIndent(raydiumTransactionData, "", "  ")
+
+	swapInfo := raydium_parse.ConvertToSwapInfo(raydiumTransactionData)
+
+	data, _ := json.MarshalIndent(swapInfo, "", "  ")
 	fmt.Println(string(data))
 }
