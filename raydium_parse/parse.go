@@ -22,9 +22,10 @@ type TransferInfo struct {
 }
 
 type TransferData struct {
-	Info TransferInfo `json:"info"`
-	Type string       `json:"type"`
-	Mint string       `json:"mint"`
+	Info     TransferInfo `json:"info"`
+	Type     string       `json:"type"`
+	Mint     string       `json:"mint"`
+	Decimals uint8        `json:"decimals"`
 }
 
 type RaydiumTransactionData struct {
@@ -37,7 +38,7 @@ type RaydiumParser struct {
 	tx                *rpc.GetTransactionResult
 	txInfo            *solana.Transaction
 	allAccountKeys    solana.PublicKeySlice
-	splTokenAddresses map[string]string
+	splTokenAddresses map[string]TokenInfo
 }
 
 func NewRaydiumTransactionParser(tx *rpc.GetTransactionResult) (*RaydiumParser, error) {
@@ -138,8 +139,9 @@ func (p *RaydiumParser) processTransfer(instr solana.CompiledInstruction) (*Tran
 			Destination: p.allAccountKeys[instr.Accounts[1]].String(),
 			Authority:   p.allAccountKeys[instr.Accounts[2]].String(),
 		},
-		Type: "transfer",
-		Mint: p.splTokenAddresses[p.allAccountKeys[instr.Accounts[1]].String()],
+		Type:     "transfer",
+		Mint:     p.splTokenAddresses[p.allAccountKeys[instr.Accounts[1]].String()].Mint,
+		Decimals: p.splTokenAddresses[p.allAccountKeys[instr.Accounts[1]].String()].Decimals,
 	}
 
 	if transferData.Mint == "" {
@@ -153,13 +155,22 @@ func (p *RaydiumParser) isTransferInstruction(instr solana.CompiledInstruction) 
 	return len(instr.Data) >= 9 && (instr.Data[0] == 3 || instr.Data[0] == 12)
 }
 
-func (p *RaydiumParser) extractSPLTokenAddresses() (map[string]string, error) {
-	splTokenAddresses := make(map[string]string)
+type TokenInfo struct {
+	Mint     string
+	Decimals uint8
+}
+
+// Now, let's update the function to use this new struct
+func (p *RaydiumParser) extractSPLTokenAddresses() (map[string]TokenInfo, error) {
+	splTokenAddresses := make(map[string]TokenInfo)
 
 	for _, accountInfo := range p.tx.Meta.PostTokenBalances {
 		if !accountInfo.Mint.IsZero() {
 			accountKey := p.allAccountKeys[accountInfo.AccountIndex].String()
-			splTokenAddresses[accountKey] = accountInfo.Mint.String()
+			splTokenAddresses[accountKey] = TokenInfo{
+				Mint:     accountInfo.Mint.String(),
+				Decimals: accountInfo.UiTokenAmount.Decimals,
+			}
 		}
 	}
 
@@ -180,10 +191,10 @@ func (p *RaydiumParser) extractSPLTokenAddresses() (map[string]string, error) {
 		destination := p.allAccountKeys[instr.Accounts[1]].String()
 
 		if _, exists := splTokenAddresses[source]; !exists {
-			splTokenAddresses[source] = ""
+			splTokenAddresses[source] = TokenInfo{Mint: "", Decimals: 0}
 		}
 		if _, exists := splTokenAddresses[destination]; !exists {
-			splTokenAddresses[destination] = ""
+			splTokenAddresses[destination] = TokenInfo{Mint: "", Decimals: 0}
 		}
 	}
 
@@ -196,9 +207,12 @@ func (p *RaydiumParser) extractSPLTokenAddresses() (map[string]string, error) {
 		}
 	}
 
-	for account, mint := range splTokenAddresses {
-		if mint == "" {
-			splTokenAddresses[account] = NativeSolMint.String()
+	for account, info := range splTokenAddresses {
+		if info.Mint == "" {
+			splTokenAddresses[account] = TokenInfo{
+				Mint:     NativeSolMint.String(),
+				Decimals: 9, // Native SOL has 9 decimal places
+			}
 		}
 	}
 
