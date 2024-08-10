@@ -1,15 +1,27 @@
 # Solana Swap Transaction Parser
 
-Parses a Solana transaction and extracts the swap data from various AMMs. Please note that parsing methods may not be convetional as there are many various ways to parse a Solana transaction. Feedback and contributions are welcome.
+Parses a Solana transaction and extracts the swap info, supports multiple AMMs. Please note that parsing methods may not be convetional as there are many various ways to parse a Solana transaction. Feedback and contributions are welcome!
 
 ## Key Features
 
-- Analyzes transactions from multiple AMMs, including Jupiter, Raydium, Orca, Meteora, and Pumpfun
-- Extracts detailed swap information from transaction signatures
+- Extracts swap information from swap transactions
 - Parsing methods:
   - Pumpfun and Jupiter: parsing the event data
   - Raydium, Orca, and Meteora: parsing Transfer and TransferChecked methods of the token program
-Note: Custom program swap transactions are not yet supported due to an outer instruction check in line 76 of `parser.go`. Feel free to experiment by removing this check. An example of such a transaction is `46Jp5EEUrmdCVcE3jeewqUmsMHhqiWWtj243UZNDFZ3mmma6h2DF4AkgPE9ToRYVLVrfKQCJphrvxbNk68Lub9vw`.
+
+## Note
+
+- Custom program swap transactions are not yet supported due to an outer instruction check in line 76 of `parser.go`. Feel free to experiment by removing this check. An example of such a transaction is `46Jp5EEUrmdCVcE3jeewqUmsMHhqiWWtj243UZNDFZ3mmma6h2DF4AkgPE9ToRYVLVrfKQCJphrvxbNk68Lub9vw`.
+- Transaction timestamp is not included in `SwapInfo` response (should get this from block)
+- Improvements could be made for `splTokenInfoMap` and `splDecimalsMap` use-case and logic
+
+## Supported AMMs
+
+- Raydium (V4 and CPMM)
+- Orca
+- Meteora
+- Pumpfun
+- Jupiter
 
 ## Example Output
 
@@ -28,10 +40,8 @@ Note: Custom program swap transactions are not yet supported due to an outer ins
 }
 ```
 
-## Supported AMMs
+## Latest Update
 
-- Raydium (V4 and CPMM)
-- Orca
-- Meteora
-- Pumpfun
-- Jupiter
+- Added Meteora and Orca support
+- Added classification of transaction types in `ParseTransaction` based on outer instruction progID and `checks.go`
+- Added multiple signers and signatures to `SwapInfo` response

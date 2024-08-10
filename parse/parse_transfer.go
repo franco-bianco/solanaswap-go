@@ -71,8 +71,8 @@ func (p *Parser) processTransfer(instr solana.CompiledInstruction) *TransferData
 			Authority:   p.allAccountKeys[instr.Accounts[2]].String(),
 		},
 		Type:     "transfer",
-		Mint:     p.splTokenAddresses[p.allAccountKeys[instr.Accounts[1]].String()].Mint,
-		Decimals: p.splTokenAddresses[p.allAccountKeys[instr.Accounts[1]].String()].Decimals,
+		Mint:     p.splTokenInfoMap[p.allAccountKeys[instr.Accounts[1]].String()].Mint,
+		Decimals: p.splTokenInfoMap[p.allAccountKeys[instr.Accounts[1]].String()].Decimals,
 	}
 
 	if transferData.Mint == "" {
@@ -137,7 +137,7 @@ func (p *Parser) extractSPLTokenInfo() error {
 		}
 	}
 
-	p.splTokenAddresses = splTokenAddresses
+	p.splTokenInfoMap = splTokenAddresses
 
 	return nil
 }

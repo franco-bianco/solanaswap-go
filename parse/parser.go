@@ -11,12 +11,12 @@ import (
 )
 
 type Parser struct {
-	tx                *rpc.GetTransactionResult
-	txInfo            *solana.Transaction
-	allAccountKeys    solana.PublicKeySlice
-	splTokenAddresses map[string]TokenInfo
-	splDecimalsMap    map[string]uint8
-	Log               *logrus.Logger
+	tx              *rpc.GetTransactionResult
+	txInfo          *solana.Transaction
+	allAccountKeys  solana.PublicKeySlice
+	splTokenInfoMap map[string]TokenInfo // map[authority]TokenInfo
+	splDecimalsMap  map[string]uint8     // map[mint]decimals
+	Log             *logrus.Logger
 }
 
 func NewTransactionParser(tx *rpc.GetTransactionResult) (*Parser, error) {

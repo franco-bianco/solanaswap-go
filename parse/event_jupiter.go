@@ -46,10 +46,6 @@ func (p *Parser) processJupiterSwaps(instructionIndex int) []SwapData {
 
 func (p *Parser) parseJupiterRouteEventInstruction(instruction solana.CompiledInstruction) (*JupiterSwapEventData, error) {
 
-	if len(instruction.Data) < 16 {
-		return nil, nil
-	}
-
 	decodedBytes, err := base58.Decode(instruction.Data.String())
 	if err != nil {
 		return nil, fmt.Errorf("error decoding instruction data: %s", err)
