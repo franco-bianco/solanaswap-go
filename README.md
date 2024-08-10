@@ -1,78 +1,37 @@
-# SOL Transaction Parser
+# Solana Swap Transaction Parser
 
-## Features
+Parses a Solana transaction and extracts the swap data from various AMMs. Please note that parsing methods may not be convetional as there are many various ways to parse a Solana transaction. Feedback and contributions are welcome.
 
-- Extracts and decodes Trade and Create events for PumpFun transactions
-- Parses Raydium swap transactions and returns the SwapInfo
-- Parses Jupiter swap transactions and returns the SwapInfo
+## Key Features
 
-## Recent Add
+- Analyzes transactions from multiple AMMs, including Jupiter, Raydium, Orca, Meteora, and Pumpfun
+- Extracts detailed swap information from transaction signatures
+- Parsing methods:
+  - Pumpfun and Jupiter: parsing the event data
+  - Raydium, Orca, and Meteora: parsing Transfer and TransferChecked methods of the token program
+Note: Custom program swap transactions are not yet supported due to an outer instruction check in line 76 of `parser.go`. Feel free to experiment by removing this check. An example of such a transaction is `46Jp5EEUrmdCVcE3jeewqUmsMHhqiWWtj243UZNDFZ3mmma6h2DF4AkgPE9ToRYVLVrfKQCJphrvxbNk68Lub9vw`.
 
-- Added Raydium transaction parsing
-- Added Pumpfun transaction parsing
-- Standardized SwapInfo return
-
-## Usage
-
-To run the Jupiter parser:
-
-```bash
-go run example/jupiter/main.go
-```
-
-To run the Raydium parser:
-
-```bash
-go run example/raydium/main.go
-```
-
-Jupiter/Raydium swap transaction parser returns the following response:
+## Example Output
 
 ```json
 {
-  "Signature": "3zQKPvFSSfvZPBRACfTGcDEyzEEx2ZyuqrkLRjbPu8Sjh88euKjGyaBYt3EbRPHpSWh49hBMg6kuLynbx7XPcgTF",
-  "Signers": [
-    "GddtzNX1hbAdg2t76iCcn546oTirRwLn7SgR82UVVgQx"
-  ],
-  "TokenInMint": "So11111111111111111111111111111111111111112",
-  "TokenInAmount": 0.577845325,
-  "TokenOutMint": "4HT1b2ysGXdyD5vxemDKq25G2sj3xeh2SvE6XMhNpump",
-  "TokenOutAmount": 47337.335701
+  "Signers": ["AkQWv1Qnvua6zJch9JrFe8a9YVE4QxCkvc3dgmHvc4Qn"],
+  "Signatures": ["5kaAWK5X9DdMmsWm6skaUXLd6prFisuYJavd9B62A941nRGcrmwvncg3tRtUfn7TcMLsrrmjCChdEjK3sjxS6YG9"],
+  "AMMs": ["Raydium", "Raydium"],
+  "Timestamp": "0001-01-01T00:00:00Z",
+  "TokenInMint": "5bpj3W9zC2Y5Zn2jDBcYVscGnCBUN5RD7152cfL9pump",
+  "TokenInAmount": 38202111872,
+  "TokenInDecimals": 6,
+  "TokenOutMint": "So11111111111111111111111111111111111111112",
+  "TokenOutAmount": 1125839750,
+  "TokenOutDecimals": 9
 }
 ```
 
-To run the Pumpfun Events parser:
+## Supported AMMs
 
-```bash
-go run example/pumpfun/main.go
-```
-
-Pumpfun events transaction parser returns the following response:
-
-```json
-{
-  "signature": "4kPxWuFqG6Jj5uutxv67K87DYuVrQukuBpP1UHbT7Hd16KUGA7fanQtZKgwTzE1HBK3WvzGHmRbhhadJTokLpchj",
-  "Events": [
-    {
-      "Mint": "MJSwwzhTxfBKgVShhfDwyz7JEiSARUPRKFECLeNpump",
-      "SolAmount": 20000001,
-      "TokenAmount": 505816083029,
-      "IsBuy": true,
-      "User": "E1tT7KB5LKFuuzrcNEPmbCvd4aPeXtDtiTPgru1f5nqr",
-      "Timestamp": 1722455139,
-      "VirtualSolReserves": 35686249671,
-      "VirtualTokenReserves": 902028135197117
-    },
-    {
-      "Mint": "MJSwwzhTxfBKgVShhfDwyz7JEiSARUPRKFECLeNpump",
-      "SolAmount": 20000000,
-      "TokenAmount": 505816083029,
-      "IsBuy": false,
-      "User": "E1tT7KB5LKFuuzrcNEPmbCvd4aPeXtDtiTPgru1f5nqr",
-      "Timestamp": 1722455139,
-      "VirtualSolReserves": 35666249671,
-      "VirtualTokenReserves": 902533951280146
-    }
-  ]
-}
-```
+- Raydium (V4 and CPMM)
+- Orca
+- Meteora
+- Pumpfun
+- Jupiter
