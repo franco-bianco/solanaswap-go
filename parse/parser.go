@@ -134,12 +134,21 @@ func (p *Parser) ProcessSwapData(swapDatas []SwapData) (*SwapInfo, error) {
 				swapInfo.TokenOutDecimals = swapData.Data.(*JupiterSwapEventData).OutputMintDecimals
 			}
 		case PUMP_FUN:
-			swapInfo.TokenInMint = NATIVE_SOL_MINT_PROGRAM_ID // TokenIn info is always SOL for Pumpfun
-			swapInfo.TokenInAmount = swapData.Data.(*PumpfunTradeEvent).SolAmount
-			swapInfo.TokenInDecimals = 9
-			swapInfo.TokenOutMint = swapData.Data.(*PumpfunTradeEvent).Mint
-			swapInfo.TokenOutAmount = swapData.Data.(*PumpfunTradeEvent).TokenAmount
-			swapInfo.TokenOutDecimals = p.splDecimalsMap[swapInfo.TokenOutMint.String()]
+			if swapData.Data.(*PumpfunTradeEvent).IsBuy {
+				swapInfo.TokenInMint = NATIVE_SOL_MINT_PROGRAM_ID // TokenIn info is always SOL for Pumpfun
+				swapInfo.TokenInAmount = swapData.Data.(*PumpfunTradeEvent).SolAmount
+				swapInfo.TokenInDecimals = 9
+				swapInfo.TokenOutMint = swapData.Data.(*PumpfunTradeEvent).Mint
+				swapInfo.TokenOutAmount = swapData.Data.(*PumpfunTradeEvent).TokenAmount
+				swapInfo.TokenOutDecimals = p.splDecimalsMap[swapInfo.TokenOutMint.String()]
+			} else {
+				swapInfo.TokenInMint = swapData.Data.(*PumpfunTradeEvent).Mint
+				swapInfo.TokenInAmount = swapData.Data.(*PumpfunTradeEvent).TokenAmount
+				swapInfo.TokenInDecimals = p.splDecimalsMap[swapInfo.TokenInMint.String()]
+				swapInfo.TokenOutMint = NATIVE_SOL_MINT_PROGRAM_ID // TokenOut info is always SOL for Pumpfun
+				swapInfo.TokenOutAmount = swapData.Data.(*PumpfunTradeEvent).SolAmount
+				swapInfo.TokenOutDecimals = 9
+			}
 			swapInfo.AMMs = append(swapInfo.AMMs, string(swapData.Type))
 			swapInfo.Timestamp = time.Unix(int64(swapData.Data.(*PumpfunTradeEvent).Timestamp), 0)
 			return swapInfo, nil // Pumpfun only has one swap event
