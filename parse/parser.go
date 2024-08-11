@@ -135,7 +135,7 @@ func (p *Parser) ProcessSwapData(swapDatas []SwapData) (*SwapInfo, error) {
 			}
 		case PUMP_FUN:
 			swapInfo.TokenInMint = NATIVE_SOL_MINT_PROGRAM_ID // TokenIn info is always SOL for Pumpfun
-			swapInfo.TokenInAmount = swapData.Data.(*PumpfunTradeEvent).SolAmount / 1e9
+			swapInfo.TokenInAmount = swapData.Data.(*PumpfunTradeEvent).SolAmount
 			swapInfo.TokenInDecimals = 9
 			swapInfo.TokenOutMint = swapData.Data.(*PumpfunTradeEvent).Mint
 			swapInfo.TokenOutAmount = swapData.Data.(*PumpfunTradeEvent).TokenAmount
