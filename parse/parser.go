@@ -80,7 +80,7 @@ func (p *Parser) ParseTransaction() ([]SwapData, error) {
 			parsedSwaps = append(parsedSwaps, p.processRaydSwaps(i)...)
 		case progID.Equals(ORCA_PROGRAM_ID):
 			parsedSwaps = append(parsedSwaps, p.processOrcaSwaps(i)...)
-		case progID.Equals(METEORA_PROGRAM_ID):
+		case progID.Equals(METEORA_PROGRAM_ID) || progID.Equals(METEORA_POOLS_PROGRAM_ID):
 			parsedSwaps = append(parsedSwaps, p.processMeteoraSwaps(i)...)
 		case progID.Equals(PUMP_FUN_PROGRAM_ID):
 			parsedSwaps = append(parsedSwaps, p.processPumpfunSwaps(i)...)
@@ -152,16 +152,34 @@ func (p *Parser) ProcessSwapData(swapDatas []SwapData) (*SwapInfo, error) {
 			swapInfo.Timestamp = time.Unix(int64(swapData.Data.(*PumpfunTradeEvent).Timestamp), 0)
 			return swapInfo, nil // Pumpfun only has one swap event
 		case METEORA:
-			if i == 0 {
-				tokenInAmount, _ := strconv.ParseInt(swapData.Data.(*TransferCheck).Info.TokenAmount.Amount, 10, 64)
-				swapInfo.TokenInMint = solana.MustPublicKeyFromBase58(swapData.Data.(*TransferCheck).Info.Mint)
-				swapInfo.TokenInAmount = uint64(tokenInAmount)
-				swapInfo.TokenInDecimals = swapData.Data.(*TransferCheck).Info.TokenAmount.Decimals
-			} else {
-				tokenOutAmount, _ := strconv.ParseFloat(swapData.Data.(*TransferCheck).Info.TokenAmount.Amount, 64)
-				swapInfo.TokenOutMint = solana.MustPublicKeyFromBase58(swapData.Data.(*TransferCheck).Info.Mint)
-				swapInfo.TokenOutAmount = uint64(tokenOutAmount)
-				swapInfo.TokenOutDecimals = swapData.Data.(*TransferCheck).Info.TokenAmount.Decimals
+			switch swapData.Data.(type) {
+			case *TransferCheck:
+				swapData := swapData.Data.(*TransferCheck)
+				if i == 0 {
+					tokenInAmount, _ := strconv.ParseInt(swapData.Info.TokenAmount.Amount, 10, 64)
+					swapInfo.TokenInMint = solana.MustPublicKeyFromBase58(swapData.Info.Mint)
+					swapInfo.TokenInAmount = uint64(tokenInAmount)
+					swapInfo.TokenInDecimals = swapData.Info.TokenAmount.Decimals
+				} else {
+					tokenOutAmount, _ := strconv.ParseFloat(swapData.Info.TokenAmount.Amount, 64)
+					swapInfo.TokenOutMint = solana.MustPublicKeyFromBase58(swapData.Info.Mint)
+					swapInfo.TokenOutAmount = uint64(tokenOutAmount)
+					swapInfo.TokenOutDecimals = swapData.Info.TokenAmount.Decimals
+				}
+			case *TransferData: // Meteora Pools
+				swapData := swapData.Data.(*TransferData)
+				if i == 0 {
+					swapInfo.TokenInMint = solana.MustPublicKeyFromBase58(swapData.Mint)
+					swapInfo.TokenInAmount = swapData.Info.Amount
+					swapInfo.TokenInDecimals = swapData.Decimals
+				} else {
+					if swapData.Info.Authority == swapInfo.Signers[0].String() && swapData.Mint == swapInfo.TokenInMint.String() {
+						swapInfo.TokenInAmount += swapData.Info.Amount
+					}
+					swapInfo.TokenOutMint = solana.MustPublicKeyFromBase58(swapData.Mint)
+					swapInfo.TokenOutAmount = swapData.Info.Amount
+					swapInfo.TokenOutDecimals = swapData.Decimals
+				}
 			}
 		case RAYDIUM, ORCA:
 			switch swapData.Data.(type) {
