@@ -121,18 +121,17 @@ func (p *Parser) ProcessSwapData(swapDatas []SwapData) (*SwapInfo, error) {
 	for i, swapData := range swapDatas {
 		switch swapData.Type {
 		case JUPITER:
-			if i == 0 {
-				swapInfo.TokenInMint = swapData.Data.(*JupiterSwapEventData).InputMint
-				swapInfo.TokenInAmount = swapData.Data.(*JupiterSwapEventData).InputAmount
-				swapInfo.TokenInDecimals = swapData.Data.(*JupiterSwapEventData).InputMintDecimals
-				swapInfo.TokenOutMint = swapData.Data.(*JupiterSwapEventData).OutputMint
-				swapInfo.TokenOutAmount = swapData.Data.(*JupiterSwapEventData).OutputAmount
-				swapInfo.TokenOutDecimals = swapData.Data.(*JupiterSwapEventData).OutputMintDecimals
-			} else {
-				swapInfo.TokenOutMint = swapData.Data.(*JupiterSwapEventData).OutputMint
-				swapInfo.TokenOutAmount = swapData.Data.(*JupiterSwapEventData).OutputAmount
-				swapInfo.TokenOutDecimals = swapData.Data.(*JupiterSwapEventData).OutputMintDecimals
+			intermediateInfo, err := parseJupiterEvents(swapDatas)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse Jupiter events: %w", err)
 			}
+			jupiterSwapInfo, err := convertToSwapInfo(intermediateInfo)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert to swap info: %w", err)
+			}
+			jupiterSwapInfo.Signatures = swapInfo.Signatures
+			jupiterSwapInfo.Signers = swapInfo.Signers
+			return jupiterSwapInfo, nil
 		case PUMP_FUN:
 			if swapData.Data.(*PumpfunTradeEvent).IsBuy {
 				swapInfo.TokenInMint = NATIVE_SOL_MINT_PROGRAM_ID // TokenIn info is always SOL for Pumpfun

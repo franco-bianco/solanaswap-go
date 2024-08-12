@@ -1,6 +1,7 @@
 package parse
 
 import (
+	"encoding/json"
 	"fmt"
 
 	ag_binary "github.com/gagliardetto/binary"
@@ -128,4 +129,87 @@ func (p *Parser) extractSPLDecimals() error {
 	p.splDecimalsMap = mintToDecimals
 
 	return nil
+}
+
+type jupiterSwapInfo struct {
+	AMMs     []string
+	TokenIn  map[string]uint64
+	TokenOut map[string]uint64
+	Decimals map[string]uint8
+}
+
+// parseJupiterEvents parses Jupiter swap events and returns an intermediate representation of the swap data. logic differs slightly due to the need to track intermediate tokens.
+func parseJupiterEvents(events []SwapData) (*jupiterSwapInfo, error) {
+	if len(events) == 0 {
+		return nil, fmt.Errorf("no events provided")
+	}
+
+	intermediateInfo := &jupiterSwapInfo{
+		AMMs:     make([]string, 0, len(events)),
+		TokenIn:  make(map[string]uint64),
+		TokenOut: make(map[string]uint64),
+		Decimals: make(map[string]uint8),
+	}
+
+	for _, event := range events {
+		if event.Type != "Jupiter" {
+			continue
+		}
+
+		var jupiterEvent JupiterSwapEventData
+		eventData, err := json.Marshal(event.Data)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal event data: %v", err)
+		}
+
+		if err := json.Unmarshal(eventData, &jupiterEvent); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal Jupiter event data: %v", err)
+		}
+
+		intermediateInfo.AMMs = append(intermediateInfo.AMMs, string(JUPITER))
+
+		inputMint := jupiterEvent.InputMint.String()
+		outputMint := jupiterEvent.OutputMint.String()
+
+		intermediateInfo.TokenIn[inputMint] += jupiterEvent.InputAmount
+		intermediateInfo.TokenOut[outputMint] += jupiterEvent.OutputAmount
+
+		intermediateInfo.Decimals[inputMint] = jupiterEvent.InputMintDecimals
+		intermediateInfo.Decimals[outputMint] = jupiterEvent.OutputMintDecimals
+	}
+
+	// Remove intermediate tokens
+	for mint := range intermediateInfo.TokenIn {
+		if _, exists := intermediateInfo.TokenOut[mint]; exists {
+			delete(intermediateInfo.TokenIn, mint)
+			delete(intermediateInfo.TokenOut, mint)
+		}
+	}
+
+	return intermediateInfo, nil
+}
+
+// convertToSwapInfo converts the intermediate Jupiter swap data to a SwapInfo struct.
+func convertToSwapInfo(intermediateInfo *jupiterSwapInfo) (*SwapInfo, error) {
+	if len(intermediateInfo.TokenIn) != 1 || len(intermediateInfo.TokenOut) != 1 {
+		return nil, fmt.Errorf("invalid swap: expected 1 input and 1 output token, got %d input(s) and %d output(s)", len(intermediateInfo.TokenIn), len(intermediateInfo.TokenOut))
+	}
+
+	swapInfo := &SwapInfo{
+		AMMs: intermediateInfo.AMMs,
+	}
+
+	for mint, amount := range intermediateInfo.TokenIn {
+		swapInfo.TokenInMint, _ = solana.PublicKeyFromBase58(mint)
+		swapInfo.TokenInAmount = amount
+		swapInfo.TokenInDecimals = intermediateInfo.Decimals[mint]
+	}
+
+	for mint, amount := range intermediateInfo.TokenOut {
+		swapInfo.TokenOutMint, _ = solana.PublicKeyFromBase58(mint)
+		swapInfo.TokenOutAmount = amount
+		swapInfo.TokenOutDecimals = intermediateInfo.Decimals[mint]
+	}
+
+	return swapInfo, nil
 }
