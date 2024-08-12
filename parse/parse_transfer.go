@@ -30,8 +30,14 @@ func (p *Parser) processRaydSwaps(instructionIndex int) []SwapData {
 	for _, innerInstructionSet := range p.tx.Meta.InnerInstructions {
 		if innerInstructionSet.Index == uint16(instructionIndex) {
 			for _, innerInstruction := range innerInstructionSet.Instructions {
-				if p.isTransfer(innerInstruction) {
+				switch {
+				case p.isTransfer(innerInstruction):
 					transfer := p.processTransfer(innerInstruction)
+					if transfer != nil {
+						swaps = append(swaps, SwapData{Type: RAYDIUM, Data: transfer})
+					}
+				case p.isTransferCheck(innerInstruction):
+					transfer := p.processTransferCheck(innerInstruction)
 					if transfer != nil {
 						swaps = append(swaps, SwapData{Type: RAYDIUM, Data: transfer})
 					}

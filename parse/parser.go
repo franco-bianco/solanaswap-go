@@ -164,14 +164,31 @@ func (p *Parser) ProcessSwapData(swapDatas []SwapData) (*SwapInfo, error) {
 				swapInfo.TokenOutDecimals = swapData.Data.(*TransferCheck).Info.TokenAmount.Decimals
 			}
 		case RAYDIUM, ORCA:
-			if i == 0 {
-				swapInfo.TokenInMint = solana.MustPublicKeyFromBase58(swapData.Data.(*TransferData).Mint)
-				swapInfo.TokenInAmount = swapData.Data.(*TransferData).Info.Amount
-				swapInfo.TokenInDecimals = swapData.Data.(*TransferData).Decimals
-			} else {
-				swapInfo.TokenOutMint = solana.MustPublicKeyFromBase58(swapData.Data.(*TransferData).Mint)
-				swapInfo.TokenOutAmount = swapData.Data.(*TransferData).Info.Amount
-				swapInfo.TokenOutDecimals = swapData.Data.(*TransferData).Decimals
+			switch swapData.Data.(type) {
+			case *TransferData: // Raydium V4 and Orca
+				swapData := swapData.Data.(*TransferData)
+				if i == 0 {
+					swapInfo.TokenInMint = solana.MustPublicKeyFromBase58(swapData.Mint)
+					swapInfo.TokenInAmount = swapData.Info.Amount
+					swapInfo.TokenInDecimals = swapData.Decimals
+				} else {
+					swapInfo.TokenOutMint = solana.MustPublicKeyFromBase58(swapData.Mint)
+					swapInfo.TokenOutAmount = swapData.Info.Amount
+					swapInfo.TokenOutDecimals = swapData.Decimals
+				}
+			case *TransferCheck: // Raydium CPMM
+				swapData := swapData.Data.(*TransferCheck)
+				if i == 0 {
+					tokenInAmount, _ := strconv.ParseInt(swapData.Info.TokenAmount.Amount, 10, 64)
+					swapInfo.TokenInMint = solana.MustPublicKeyFromBase58(swapData.Info.Mint)
+					swapInfo.TokenInAmount = uint64(tokenInAmount)
+					swapInfo.TokenInDecimals = swapData.Info.TokenAmount.Decimals
+				} else {
+					tokenOutAmount, _ := strconv.ParseFloat(swapData.Info.TokenAmount.Amount, 64)
+					swapInfo.TokenOutMint = solana.MustPublicKeyFromBase58(swapData.Info.Mint)
+					swapInfo.TokenOutAmount = uint64(tokenOutAmount)
+					swapInfo.TokenOutDecimals = swapData.Info.TokenAmount.Decimals
+				}
 			}
 		}
 		swapInfo.AMMs = append(swapInfo.AMMs, string(swapData.Type))
