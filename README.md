@@ -17,9 +17,9 @@ Parses a Solana transaction and extracts the swap info, supports multiple AMMs. 
 
 ## Supported AMMs
 
-- Raydium (V4 and CPMM)
+- Raydium (V4, Route and CPMM)
 - Orca
-- Meteora
+- Meteora (DLMM and Pools)
 - Pumpfun
 - Jupiter
 
