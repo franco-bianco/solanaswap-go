@@ -76,7 +76,11 @@ func (p *Parser) ParseTransaction() ([]SwapData, error) {
 	for i, outerInstruction := range p.txInfo.Message.Instructions {
 		progID := p.allAccountKeys[outerInstruction.ProgramIDIndex]
 		switch {
-		case progID.Equals(RAYDIUM_V4_PROGRAM_ID) || progID.Equals(RAYDIUM_CPMM_PROGRAM_ID) || progID.Equals(RAYDIUM_CPMM_PROGRAM_ID):
+		case progID.Equals(RAYDIUM_V4_PROGRAM_ID) ||
+			progID.Equals(RAYDIUM_CPMM_PROGRAM_ID) ||
+			progID.Equals(RAYDIUM_CPMM_PROGRAM_ID) ||
+			progID.Equals(RAYDIUM_CONCENTRATED_LIQUIDITY_PROGRAM_ID) || // RaydConcentratedLiquiditySwapV2
+			progID.Equals(solana.MustPublicKeyFromBase58("AP51WLiiqTdbZfgyRMs35PsZpdmLuPDdHYmrB23pEtMU")): // RaydConcentratedLiquiditySwap
 			parsedSwaps = append(parsedSwaps, p.processRaydSwaps(i)...)
 		case progID.Equals(ORCA_PROGRAM_ID):
 			parsedSwaps = append(parsedSwaps, p.processOrcaSwaps(i)...)
