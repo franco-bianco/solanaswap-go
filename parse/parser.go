@@ -86,7 +86,8 @@ func (p *Parser) ParseTransaction() ([]SwapData, error) {
 			parsedSwaps = append(parsedSwaps, p.processOrcaSwaps(i)...)
 		case progID.Equals(METEORA_PROGRAM_ID) || progID.Equals(METEORA_POOLS_PROGRAM_ID):
 			parsedSwaps = append(parsedSwaps, p.processMeteoraSwaps(i)...)
-		case progID.Equals(PUMP_FUN_PROGRAM_ID):
+		case progID.Equals(PUMP_FUN_PROGRAM_ID) ||
+			progID.Equals(solana.MustPublicKeyFromBase58("BSfD6SHZigAfDWSjzD5Q41jw8LmKwtmjskPH9XW1mrRW")): // PumpFun
 			parsedSwaps = append(parsedSwaps, p.processPumpfunSwaps(i)...)
 		}
 	}
