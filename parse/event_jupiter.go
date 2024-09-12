@@ -45,6 +45,16 @@ func (p *Parser) processJupiterSwaps(instructionIndex int) []SwapData {
 	return swaps
 }
 
+// containsDCAProgram checks if the transaction contains the Jupiter DCA program.
+func (p *Parser) containsDCAProgram() bool {
+	for _, accountKey := range p.allAccountKeys {
+		if accountKey.Equals(JUPITER_DCA_PROGRAM_ID) {
+			return true	
+		}
+	}
+	return false
+}
+
 func (p *Parser) parseJupiterRouteEventInstruction(instruction solana.CompiledInstruction) (*JupiterSwapEventData, error) {
 
 	decodedBytes, err := base58.Decode(instruction.Data.String())
@@ -190,7 +200,7 @@ func parseJupiterEvents(events []SwapData) (*jupiterSwapInfo, error) {
 }
 
 // convertToSwapInfo converts the intermediate Jupiter swap data to a SwapInfo struct.
-func convertToSwapInfo(intermediateInfo *jupiterSwapInfo) (*SwapInfo, error) {
+func (p *Parser) convertToSwapInfo(intermediateInfo *jupiterSwapInfo) (*SwapInfo, error) {
 	if len(intermediateInfo.TokenIn) != 1 || len(intermediateInfo.TokenOut) != 1 {
 		return nil, fmt.Errorf("invalid swap: expected 1 input and 1 output token, got %d input(s) and %d output(s)", len(intermediateInfo.TokenIn), len(intermediateInfo.TokenOut))
 	}
@@ -211,5 +221,13 @@ func convertToSwapInfo(intermediateInfo *jupiterSwapInfo) (*SwapInfo, error) {
 		swapInfo.TokenOutDecimals = intermediateInfo.Decimals[mint]
 	}
 
+	// set signers if it contains DCA program
+	var signer solana.PublicKey
+	if p.containsDCAProgram() {
+		signer = p.allAccountKeys[2]
+	} 
+	swapInfo.Signers = append(swapInfo.Signers, signer)
+
 	return swapInfo, nil
 }
+
