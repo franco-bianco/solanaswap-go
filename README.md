@@ -8,6 +8,7 @@ Parses a Solana transaction and extracts the swap info, supports multiple AMMs. 
 - Parsing methods:
   - Pumpfun and Jupiter: parsing the event data
   - Raydium, Orca, and Meteora: parsing Transfer and TransferChecked methods of the token program
+  - Moonshot: parsing the instruction data of the Trade instruction
 
 ## Note
 
@@ -20,6 +21,7 @@ Parses a Solana transaction and extracts the swap info, supports multiple AMMs. 
 - Raydium (V4, Route, CPMM, ConcentratedLiquidity)
 - Orca
 - Meteora (DLMM and Pools)
+- MoonShot
 - Pumpfun
 - Jupiter
 
@@ -28,7 +30,9 @@ Parses a Solana transaction and extracts the swap info, supports multiple AMMs. 
 ```json
 {
   "Signers": ["AkQWv1Qnvua6zJch9JrFe8a9YVE4QxCkvc3dgmHvc4Qn"],
-  "Signatures": ["5kaAWK5X9DdMmsWm6skaUXLd6prFisuYJavd9B62A941nRGcrmwvncg3tRtUfn7TcMLsrrmjCChdEjK3sjxS6YG9"],
+  "Signatures": [
+    "5kaAWK5X9DdMmsWm6skaUXLd6prFisuYJavd9B62A941nRGcrmwvncg3tRtUfn7TcMLsrrmjCChdEjK3sjxS6YG9"
+  ],
   "AMMs": ["Raydium", "Raydium"],
   "Timestamp": "0001-01-01T00:00:00Z",
   "TokenInMint": "5bpj3W9zC2Y5Zn2jDBcYVscGnCBUN5RD7152cfL9pump",
@@ -41,6 +45,13 @@ Parses a Solana transaction and extracts the swap info, supports multiple AMMs. 
 ```
 
 ## Latest Update
+
+13 Sep '24:
+
+- Added MoonShot support
+- Improved handling for Jupiter DCA
+
+10 Aug '24:
 
 - Added Meteora and Orca support
 - Added classification of transaction types in `ParseTransaction` based on outer instruction progID and `checks.go`

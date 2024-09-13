@@ -61,16 +61,21 @@ type SwapData struct {
 func (p *Parser) ParseTransaction() ([]SwapData, error) {
 	var parsedSwaps []SwapData
 
-	containsJupiterSwap := false
+	skip := false
 	for i, outerInstruction := range p.txInfo.Message.Instructions {
 		progID := p.allAccountKeys[outerInstruction.ProgramIDIndex]
-		if progID.Equals(JUPITER_PROGRAM_ID) {
-			containsJupiterSwap = true
+		switch {
+		case progID.Equals(JUPITER_PROGRAM_ID):
+			skip = true
 			parsedSwaps = append(parsedSwaps, p.processJupiterSwaps(i)...)
+		case progID.Equals(MOONSHOT_PROGRAM_ID):
+			skip = true
+			parsedSwaps = append(parsedSwaps, p.processMoonshotSwaps()...)
 		}
 	}
-	if containsJupiterSwap {
-		return parsedSwaps, nil // avoid processing further because Jupiter is an aggregator and other swaps are already included in the Jupiter swap
+	if skip {
+		// avoid processing other swaps if Jupiter is an aggregator and other swaps are already included in the Jupiter swap
+		return parsedSwaps, nil
 	}
 
 	for i, outerInstruction := range p.txInfo.Message.Instructions {
@@ -214,6 +219,27 @@ func (p *Parser) ProcessSwapData(swapDatas []SwapData) (*SwapInfo, error) {
 					swapInfo.TokenOutDecimals = swapData.Info.TokenAmount.Decimals
 				}
 			}
+		case MOONSHOT:
+			swapData := swapData.Data.(*MoonshotTradeInstructionWithMint)
+			switch swapData.Instruction.Data.FixedSide {
+			case 0: // SELL
+				swapInfo.TokenInMint = swapData.Mint
+				swapInfo.TokenInAmount = swapData.Instruction.Data.TokenAmount
+				swapInfo.TokenInDecimals = 9
+				swapInfo.TokenOutMint = NATIVE_SOL_MINT_PROGRAM_ID
+				swapInfo.TokenOutAmount = swapData.Instruction.Data.CollateralAmount
+				swapInfo.TokenOutDecimals = 9
+			case 1: // BUY
+				swapInfo.TokenInMint = NATIVE_SOL_MINT_PROGRAM_ID
+				swapInfo.TokenInAmount = swapData.Instruction.Data.CollateralAmount
+				swapInfo.TokenInDecimals = 9
+				swapInfo.TokenOutMint = swapData.Mint
+				swapInfo.TokenOutAmount = swapData.Instruction.Data.TokenAmount
+				swapInfo.TokenOutDecimals = 9
+			default:
+				return nil, fmt.Errorf("invalid fixed side: %d", swapData.Instruction.Data.FixedSide)
+			}
+
 		}
 		swapInfo.AMMs = append(swapInfo.AMMs, string(swapData.Type))
 	}
