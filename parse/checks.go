@@ -36,7 +36,7 @@ func (p *Parser) isTransfer(instr solana.CompiledInstruction) bool {
 func (p *Parser) isTransferCheck(instr solana.CompiledInstruction) bool {
 	progID := p.allAccountKeys[instr.ProgramIDIndex]
 
-	if !progID.Equals(solana.TokenProgramID) {
+	if !progID.Equals(solana.TokenProgramID) && !progID.Equals(solana.Token2022ProgramID) {
 		return false
 	}
 
