@@ -1,6 +1,7 @@
 package parse
 
 import (
+	"bytes"
 	"fmt"
 
 	ag_binary "github.com/gagliardetto/binary"
@@ -8,6 +9,36 @@ import (
 	"github.com/mr-tron/base58"
 )
 
+type MoonshotTradeInstruction struct {
+	Data *MoonshotTradeParams
+}
+
+type MoonshotTradeParams struct {
+	TokenAmount      uint64
+	CollateralAmount uint64
+	FixedSide        uint8
+	SlippageBps      uint64
+}
+
+type MoonshotTradeInstructionWithMint struct {
+	Instruction MoonshotTradeInstruction
+	Mint        solana.PublicKey
+	TradeType   TradeType
+}
+
+type TradeType int
+
+const (
+	TradeTypeBuy TradeType = iota
+	TradeTypeSell
+)
+
+var (
+	MOONSHOT_BUY_INSTRUCTION  = ag_binary.TypeID([8]byte{102, 6, 61, 18, 1, 218, 235, 234})
+	MOONSHOT_SELL_INSTRUCTION = ag_binary.TypeID([8]byte{51, 230, 133, 164, 1, 127, 131, 173})
+)
+
+// processMoonshotSwaps processes the moonshot swaps
 func (p *Parser) processMoonshotSwaps() []SwapData {
 	var swaps []SwapData
 
@@ -38,25 +69,8 @@ func (p *Parser) isMoonshotTrade(instruction solana.CompiledInstruction) bool {
 	return true
 }
 
-type MoonshotTradeInstruction struct {
-	Data *MoonshotTradeParams
-}
-
-type MoonshotTradeParams struct {
-	TokenAmount      uint64
-	CollateralAmount uint64
-	FixedSide        uint8
-	SlippageBps      uint64
-}
-
-type MoonshotTradeInstructionWithMint struct {
-	Instruction MoonshotTradeInstruction
-	Mint        solana.PublicKey
-}
-
 // parseMoonshotTradeInstruction parses the moonshot trade instruction
 func (p *Parser) parseMoonshotTradeInstruction(instruction solana.CompiledInstruction) (*SwapData, error) {
-
 	var (
 		swapData        SwapData
 		instructionData MoonshotTradeInstruction
@@ -67,11 +81,25 @@ func (p *Parser) parseMoonshotTradeInstruction(instruction solana.CompiledInstru
 		return nil, fmt.Errorf("failed to decode base58 instruction data: %v", err)
 	}
 
+	discriminator := decodedBytes[:8]
+	var tradeType TradeType
+
+	switch {
+	case bytes.Equal(discriminator, MOONSHOT_BUY_INSTRUCTION[:]):
+		tradeType = TradeTypeBuy
+		fmt.Printf("buy\n")
+	case bytes.Equal(discriminator, MOONSHOT_SELL_INSTRUCTION[:]):
+		tradeType = TradeTypeSell
+		fmt.Printf("sell\n")
+	default:
+		return nil, fmt.Errorf("unknown moonshot trade instruction")
+	}
+
 	decoder := ag_binary.NewBorshDecoder(decodedBytes[8:])
 
 	err = decoder.Decode(&instructionData)
 	if err != nil {
-		return nil, fmt.Errorf("error unmarshaling moonshot buy data: %s", err)
+		return nil, fmt.Errorf("error unmarshaling moonshot trade data: %s", err)
 	}
 
 	mint := p.txInfo.Message.AccountKeys[instruction.Accounts[6]]
@@ -79,6 +107,7 @@ func (p *Parser) parseMoonshotTradeInstruction(instruction solana.CompiledInstru
 	instructionWithMint := &MoonshotTradeInstructionWithMint{
 		Instruction: instructionData,
 		Mint:        mint,
+		TradeType:   tradeType,
 	}
 
 	swapData = SwapData{
