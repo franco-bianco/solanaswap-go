@@ -140,9 +140,6 @@ func (p *Parser) ProcessSwapData(swapDatas []SwapData) (*SwapInfo, error) {
 				return nil, fmt.Errorf("failed to convert to swap info: %w", err)
 			}
 			jupiterSwapInfo.Signatures = swapInfo.Signatures
-			if len(jupiterSwapInfo.Signers) == 0 { // set signers if it has not been set (would be empty if not DCA program)
-				jupiterSwapInfo.Signers = swapInfo.Signers
-			}
 			return jupiterSwapInfo, nil
 		case PUMP_FUN:
 			if swapData.Data.(*PumpfunTradeEvent).IsBuy {

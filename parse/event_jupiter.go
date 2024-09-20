@@ -49,7 +49,7 @@ func (p *Parser) processJupiterSwaps(instructionIndex int) []SwapData {
 func (p *Parser) containsDCAProgram() bool {
 	for _, accountKey := range p.allAccountKeys {
 		if accountKey.Equals(JUPITER_DCA_PROGRAM_ID) {
-			return true	
+			return true
 		}
 	}
 	return false
@@ -188,12 +188,15 @@ func parseJupiterEvents(events []SwapData) (*jupiterSwapInfo, error) {
 		intermediateInfo.Decimals[outputMint] = jupiterEvent.OutputMintDecimals
 	}
 
-	// Remove intermediate tokens
-	for mint := range intermediateInfo.TokenIn {
-		if _, exists := intermediateInfo.TokenOut[mint]; exists {
+	for mint, inAmount := range intermediateInfo.TokenIn {
+		if outAmount, exists := intermediateInfo.TokenOut[mint]; exists && inAmount == outAmount {
 			delete(intermediateInfo.TokenIn, mint)
 			delete(intermediateInfo.TokenOut, mint)
 		}
+	}
+
+	if len(intermediateInfo.TokenIn) == 0 || len(intermediateInfo.TokenOut) == 0 {
+		return nil, fmt.Errorf("invalid swap: all tokens were removed as intermediates")
 	}
 
 	return intermediateInfo, nil
@@ -201,8 +204,12 @@ func parseJupiterEvents(events []SwapData) (*jupiterSwapInfo, error) {
 
 // convertToSwapInfo converts the intermediate Jupiter swap data to a SwapInfo struct.
 func (p *Parser) convertToSwapInfo(intermediateInfo *jupiterSwapInfo) (*SwapInfo, error) {
+
 	if len(intermediateInfo.TokenIn) != 1 || len(intermediateInfo.TokenOut) != 1 {
-		return nil, fmt.Errorf("invalid swap: expected 1 input and 1 output token, got %d input(s) and %d output(s)", len(intermediateInfo.TokenIn), len(intermediateInfo.TokenOut))
+		return nil, fmt.Errorf("invalid swap: expected 1 input and 1 output token, got %d input(s) and %d output(s)",
+			len(intermediateInfo.TokenIn),
+			len(intermediateInfo.TokenOut),
+		)
 	}
 
 	swapInfo := &SwapInfo{
@@ -225,9 +232,10 @@ func (p *Parser) convertToSwapInfo(intermediateInfo *jupiterSwapInfo) (*SwapInfo
 	var signer solana.PublicKey
 	if p.containsDCAProgram() {
 		signer = p.allAccountKeys[2]
-	} 
+	} else {
+		signer = p.allAccountKeys[0]
+	}
 	swapInfo.Signers = append(swapInfo.Signers, signer)
 
 	return swapInfo, nil
 }
-
