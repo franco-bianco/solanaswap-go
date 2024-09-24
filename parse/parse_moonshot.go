@@ -87,10 +87,8 @@ func (p *Parser) parseMoonshotTradeInstruction(instruction solana.CompiledInstru
 	switch {
 	case bytes.Equal(discriminator, MOONSHOT_BUY_INSTRUCTION[:]):
 		tradeType = TradeTypeBuy
-		fmt.Printf("buy\n")
 	case bytes.Equal(discriminator, MOONSHOT_SELL_INSTRUCTION[:]):
 		tradeType = TradeTypeSell
-		fmt.Printf("sell\n")
 	default:
 		return nil, fmt.Errorf("unknown moonshot trade instruction")
 	}
