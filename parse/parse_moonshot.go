@@ -39,7 +39,6 @@ var (
 	MOONSHOT_SELL_INSTRUCTION = ag_binary.TypeID([8]byte{51, 230, 133, 164, 1, 127, 131, 173})
 )
 
-// processMoonshotSwaps processes the moonshot swaps
 func (p *Parser) processMoonshotSwaps() []SwapData {
 	var swaps []SwapData
 
@@ -47,6 +46,7 @@ func (p *Parser) processMoonshotSwaps() []SwapData {
 		if p.isMoonshotTrade(instruction) {
 			swapData, err := p.parseMoonshotTradeInstruction(instruction)
 			if err != nil {
+				p.Log.Errorf("error parsing moonshot trade instruction: %s", err)
 				continue
 			}
 			swaps = append(swaps, *swapData)
@@ -56,27 +56,11 @@ func (p *Parser) processMoonshotSwaps() []SwapData {
 	return swaps
 }
 
-// isMoonshotTrade checks if the instruction is a moonshot trade
 func (p *Parser) isMoonshotTrade(instruction solana.CompiledInstruction) bool {
-	programID := p.txInfo.Message.AccountKeys[instruction.ProgramIDIndex]
-	if !programID.Equals(MOONSHOT_PROGRAM_ID) {
-		return false
-	}
-
-	if len(instruction.Data) != 33 || len(instruction.Accounts) != 11 {
-		return false
-	}
-
-	return true
+	return p.txInfo.Message.AccountKeys[instruction.ProgramIDIndex].Equals(MOONSHOT_PROGRAM_ID) && len(instruction.Data) == 33 && len(instruction.Accounts) == 11
 }
 
-// parseMoonshotTradeInstruction parses the moonshot trade instruction
 func (p *Parser) parseMoonshotTradeInstruction(instruction solana.CompiledInstruction) (*SwapData, error) {
-	var (
-		swapData        SwapData
-		instructionData MoonshotTradeInstruction
-	)
-
 	decodedBytes, err := base58.Decode(instruction.Data.String())
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode base58 instruction data: %v", err)
@@ -94,24 +78,22 @@ func (p *Parser) parseMoonshotTradeInstruction(instruction solana.CompiledInstru
 		return nil, fmt.Errorf("unknown moonshot trade instruction")
 	}
 
-	decoder := ag_binary.NewBorshDecoder(decodedBytes[8:])
-
-	err = decoder.Decode(&instructionData)
-	if err != nil {
+	var instructionData MoonshotTradeInstruction
+	if err := ag_binary.NewBorshDecoder(decodedBytes[8:]).Decode(&instructionData); err != nil {
 		return nil, fmt.Errorf("error unmarshaling moonshot trade data: %s", err)
 	}
 
-	mint := p.txInfo.Message.AccountKeys[instruction.Accounts[6]]
+	mint := NATIVE_SOL_MINT_PROGRAM_ID
+	if tradeType == TradeTypeBuy {
+		mint = p.txInfo.Message.AccountKeys[instruction.Accounts[6]]
+	}
 
 	tokenBalanceChanges, err := p.getTokenBalanceChanges(mint)
 	if err != nil {
 		return nil, fmt.Errorf("error getting token balance changes: %s", err)
 	}
 
-	tokenBalanceChangesAbs := uint64(tokenBalanceChanges)
-	if tokenBalanceChanges < 0 {
-		tokenBalanceChangesAbs = uint64(-tokenBalanceChanges)
-	}
+	tokenBalanceChangesAbs := uint64(abs(tokenBalanceChanges))
 
 	instructionWithMint := &MoonshotTradeInstructionWithMint{
 		Instruction: instructionData,
@@ -122,40 +104,68 @@ func (p *Parser) parseMoonshotTradeInstruction(instruction solana.CompiledInstru
 	if tradeType == TradeTypeBuy {
 		instructionWithMint.Instruction.Data.TokenAmount = tokenBalanceChangesAbs
 	} else {
-		instructionWithMint.Instruction.Data.TokenAmount = tokenBalanceChangesAbs
+		instructionWithMint.Instruction.Data.CollateralAmount = tokenBalanceChangesAbs
 	}
 
-	swapData = SwapData{
+	return &SwapData{
 		Type: MOONSHOT,
 		Data: instructionWithMint,
-	}
-
-	return &swapData, nil
+	}, nil
 }
 
-// getTokenBalanceChanges gets the token balance changes for a given mint
 func (p *Parser) getTokenBalanceChanges(mint solana.PublicKey) (int64, error) {
-	var totalChange int64
 
-	for _, postBalance := range p.tx.Meta.PostTokenBalances {
-		if postBalance.Mint.Equals(mint) {
-			for _, preBalance := range p.tx.Meta.PreTokenBalances {
-				if preBalance.AccountIndex == postBalance.AccountIndex {
+	// handle native SOL balance change for sells (as SOL is the output). We are getting the balance change for the signer's SOL account (index 0)
+	if mint == NATIVE_SOL_MINT_PROGRAM_ID {
+		if len(p.tx.Meta.PostBalances) == 0 || len(p.tx.Meta.PreBalances) == 0 {
+			return 0, fmt.Errorf("insufficient balance information for SOL")
+		}
+		change := int64(p.tx.Meta.PostBalances[0]) - int64(p.tx.Meta.PreBalances[0])
+		return change, nil
+	}
 
-					postAmount, err := strconv.ParseInt(postBalance.UiTokenAmount.Amount, 10, 64)
-					if err != nil {
-						return 0, fmt.Errorf("error parsing post balance amount: %s", err)
-					}
-					preAmount, err := strconv.ParseInt(preBalance.UiTokenAmount.Amount, 10, 64)
-					if err != nil {
-						return 0, fmt.Errorf("error parsing pre balance amount: %s", err)
-					}
-					change := postAmount - preAmount
-					totalChange += change
-				}
+	// handle SPL token balance change for buys (as SPL token is the output). We are getting the balance change for the sender's token account (index 1)
+	var preAmount, postAmount int64
+	var postBalanceFound bool
+
+	// find pre-balance for account 1
+	for _, preBalance := range p.tx.Meta.PreTokenBalances {
+		if preBalance.AccountIndex == 1 && preBalance.Mint.Equals(mint) {
+			preAmountStr := preBalance.UiTokenAmount.Amount
+			var err error
+			preAmount, err = strconv.ParseInt(preAmountStr, 10, 64)
+			if err != nil {
+				return 0, fmt.Errorf("error parsing pre balance amount: %s", err)
 			}
+			break
 		}
 	}
 
-	return totalChange, nil
+	// find post-balance for account 1
+	for _, postBalance := range p.tx.Meta.PostTokenBalances {
+		if postBalance.AccountIndex == 1 && postBalance.Mint.Equals(mint) {
+			postAmountStr := postBalance.UiTokenAmount.Amount
+			var err error
+			postAmount, err = strconv.ParseInt(postAmountStr, 10, 64)
+			if err != nil {
+				return 0, fmt.Errorf("error parsing post balance amount: %s", err)
+			}
+			postBalanceFound = true
+			break
+		}
+	}
+
+	if !postBalanceFound { // not necessary to check for preBalanceFound
+		return 0, fmt.Errorf("could not find post balance for account 1")
+	}
+
+	change := postAmount - preAmount
+	return change, nil
+}
+
+func abs(n int64) int64 {
+	if n < 0 {
+		return -n
+	}
+	return n
 }
