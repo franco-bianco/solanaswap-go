@@ -3,6 +3,7 @@ package parse
 import (
 	"bytes"
 	"fmt"
+	"strconv"
 
 	ag_binary "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
@@ -102,10 +103,26 @@ func (p *Parser) parseMoonshotTradeInstruction(instruction solana.CompiledInstru
 
 	mint := p.txInfo.Message.AccountKeys[instruction.Accounts[6]]
 
+	tokenBalanceChanges, err := p.getTokenBalanceChanges(mint)
+	if err != nil {
+		return nil, fmt.Errorf("error getting token balance changes: %s", err)
+	}
+
+	tokenBalanceChangesAbs := uint64(tokenBalanceChanges)
+	if tokenBalanceChanges < 0 {
+		tokenBalanceChangesAbs = uint64(-tokenBalanceChanges)
+	}
+
 	instructionWithMint := &MoonshotTradeInstructionWithMint{
 		Instruction: instructionData,
 		Mint:        mint,
 		TradeType:   tradeType,
+	}
+
+	if tradeType == TradeTypeBuy {
+		instructionWithMint.Instruction.Data.TokenAmount = tokenBalanceChangesAbs
+	} else {
+		instructionWithMint.Instruction.Data.TokenAmount = tokenBalanceChangesAbs
 	}
 
 	swapData = SwapData{
@@ -114,4 +131,31 @@ func (p *Parser) parseMoonshotTradeInstruction(instruction solana.CompiledInstru
 	}
 
 	return &swapData, nil
+}
+
+// getTokenBalanceChanges gets the token balance changes for a given mint
+func (p *Parser) getTokenBalanceChanges(mint solana.PublicKey) (int64, error) {
+	var totalChange int64
+
+	for _, postBalance := range p.tx.Meta.PostTokenBalances {
+		if postBalance.Mint.Equals(mint) {
+			for _, preBalance := range p.tx.Meta.PreTokenBalances {
+				if preBalance.AccountIndex == postBalance.AccountIndex {
+
+					postAmount, err := strconv.ParseInt(postBalance.UiTokenAmount.Amount, 10, 64)
+					if err != nil {
+						return 0, fmt.Errorf("error parsing post balance amount: %s", err)
+					}
+					preAmount, err := strconv.ParseInt(preBalance.UiTokenAmount.Amount, 10, 64)
+					if err != nil {
+						return 0, fmt.Errorf("error parsing pre balance amount: %s", err)
+					}
+					change := postAmount - preAmount
+					totalChange += change
+				}
+			}
+		}
+	}
+
+	return totalChange, nil
 }
