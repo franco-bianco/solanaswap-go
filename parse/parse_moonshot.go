@@ -104,6 +104,7 @@ func (p *Parser) parseMoonshotTradeInstruction(instruction solana.CompiledInstru
 	if tradeType == TradeTypeBuy {
 		instructionWithMint.Instruction.Data.TokenAmount = tokenBalanceChangesAbs
 	} else {
+		instructionWithMint.Mint = p.txInfo.Message.AccountKeys[instruction.Accounts[6]]
 		instructionWithMint.Instruction.Data.CollateralAmount = tokenBalanceChangesAbs
 	}
 
