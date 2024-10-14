@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"sol-swap-parse/parse"
 
+	solanaswapgo "github.com/franco-bianco/solanaswap-go/solanaswap-go"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 )
@@ -46,7 +46,7 @@ func main() {
 		log.Fatalf("error getting tx: %s", err)
 	}
 
-	parser, err := parse.NewTransactionParser(tx)
+	parser, err := solanaswapgo.NewTransactionParser(tx)
 	if err != nil {
 		log.Fatalf("error creating orca parser: %s", err)
 	}

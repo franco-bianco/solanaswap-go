@@ -1,4 +1,4 @@
-package parse
+package solanaswapgo
 
 import (
 	"encoding/binary"

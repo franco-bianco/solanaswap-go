@@ -1,4 +1,4 @@
-# Solana Swap Transaction Parser
+# solanaswap-go: Solana Swap Transaction Parser
 
 Parses a Solana transaction and extracts the swap info, supports multiple AMMs. Please note that parsing methods may not be convetional as there are many various ways to parse a Solana transaction. Feedback and contributions are welcome!
 
@@ -10,9 +10,21 @@ Parses a Solana transaction and extracts the swap info, supports multiple AMMs. 
   - Raydium, Orca, and Meteora: parsing Transfer and TransferChecked methods of the token program
   - Moonshot: parsing the instruction data of the Trade instruction
 
+## Installation
+
+To install the solanaswap-go package, use the following command:
+
+```bash
+go get github.com/franco-bianco/solanaswap-go
+```
+
+## Usage
+
+A basic example of how to use the solanaswap-go package is in the `main.go` file
+
 ## Note
 
-- Custom program swap transactions are not yet supported due to an outer instruction check in line 76 of `parser.go`. Feel free to experiment by removing this check. An example of such a transaction is `46Jp5EEUrmdCVcE3jeewqUmsMHhqiWWtj243UZNDFZ3mmma6h2DF4AkgPE9ToRYVLVrfKQCJphrvxbNk68Lub9vw`.
+- Custom program swap transactions are not yet supported due to the outer instruction check
 - Transaction timestamp is not included in `SwapInfo` response (should get this from block)
 - Improvements could be made for `splTokenInfoMap` and `splDecimalsMap` use-case and logic
 
@@ -43,16 +55,3 @@ Parses a Solana transaction and extracts the swap info, supports multiple AMMs. 
   "TokenOutDecimals": 9
 }
 ```
-
-## Latest Update
-
-13 Sep '24:
-
-- Added MoonShot support
-- Improved handling for Jupiter DCA
-
-10 Aug '24:
-
-- Added Meteora and Orca support
-- Added classification of transaction types in `ParseTransaction` based on outer instruction progID and `checks.go`
-- Added multiple signers and signatures to `SwapInfo` response

@@ -1,4 +1,4 @@
-package parse
+package solanaswapgo
 
 import "github.com/gagliardetto/solana-go"
 

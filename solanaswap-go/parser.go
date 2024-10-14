@@ -1,4 +1,4 @@
-package parse
+package solanaswapgo
 
 import (
 	"fmt"
@@ -222,22 +222,21 @@ func (p *Parser) ProcessSwapData(swapDatas []SwapData) (*SwapInfo, error) {
 			switch swapData.TradeType {
 			case TradeTypeBuy: // BUY
 				swapInfo.TokenInMint = NATIVE_SOL_MINT_PROGRAM_ID
-				swapInfo.TokenInAmount = swapData.Instruction.Data.CollateralAmount
+				swapInfo.TokenInAmount = swapData.CollateralAmount
 				swapInfo.TokenInDecimals = 9
 				swapInfo.TokenOutMint = swapData.Mint
-				swapInfo.TokenOutAmount = swapData.Instruction.Data.TokenAmount
+				swapInfo.TokenOutAmount = swapData.TokenAmount
 				swapInfo.TokenOutDecimals = 9
 			case TradeTypeSell: // SELL
 				swapInfo.TokenInMint = swapData.Mint
-				swapInfo.TokenInAmount = swapData.Instruction.Data.TokenAmount
+				swapInfo.TokenInAmount = swapData.TokenAmount
 				swapInfo.TokenInDecimals = 9
 				swapInfo.TokenOutMint = NATIVE_SOL_MINT_PROGRAM_ID
-				swapInfo.TokenOutAmount = swapData.Instruction.Data.CollateralAmount
+				swapInfo.TokenOutAmount = swapData.CollateralAmount
 				swapInfo.TokenOutDecimals = 9
 			default:
-				return nil, fmt.Errorf("invalid fixed side: %d", swapData.Instruction.Data.FixedSide)
+				return nil, fmt.Errorf("invalid trade type: %d", swapData.TradeType)
 			}
-
 		}
 		swapInfo.AMMs = append(swapInfo.AMMs, string(swapData.Type))
 	}
