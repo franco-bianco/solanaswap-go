@@ -18,9 +18,113 @@ To install the solanaswap-go package, use the following command:
 go get github.com/franco-bianco/solanaswap-go
 ```
 
+Here's an improved version of the **Usage** section of the `solanaswap-go` README to make it clearer and more user-friendly:
+
 ## Usage
 
-A basic example of how to use the solanaswap-go package is in the `main.go` file
+### 1. Import the Package
+
+Begin by importing the `solanaswap-go` package into your Go project:
+
+```go
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"log"
+
+	"github.com/gagliardetto/solana-go/rpc"
+	solana "github.com/gagliardetto/solana-go"
+	solanaswapgo "github.com/franco-bianco/solanaswap-go/solanaswap-go"
+)
+```
+
+### 2. Fetch and Parse a Solana Transaction
+
+Use the package to fetch and parse a Solana transaction. Here's an example of how to use the `solanaswap-go` library to parse swap information from a transaction signature:
+
+```go
+func main() {
+	// Set up RPC client for Solana mainnet
+	rpcClient := rpc.New(rpc.MainNetBeta.RPC)
+
+	// Replace with your actual transaction signature
+	txSig := solana.MustSignatureFromBase58("2XYu86VrUXiwNNj8WvngcXGytrCsSrpay69Rt3XBz9YZvCQcZJLjvDfh9UWETFtFW47vi4xG2CkiarRJwSe6VekE")
+
+	// Specify the maximum transaction version supported
+	var maxTxVersion uint64 = 0
+
+	// Fetch the transaction data using the RPC client
+	tx, err := rpcClient.GetTransaction(
+		context.TODO(),
+		txSig,
+		&rpc.GetTransactionOpts{
+			Commitment:                     rpc.CommitmentConfirmed,
+			MaxSupportedTransactionVersion: &maxTxVersion,
+		},
+	)
+	if err != nil {
+		log.Fatalf("Error fetching transaction: %s", err)
+	}
+
+	// Initialize the transaction parser
+	parser, err := solanaswapgo.NewTransactionParser(tx)
+	if err != nil {
+		log.Fatalf("Error initializing transaction parser: %s", err)
+	}
+
+	// Parse the transaction to extract basic data
+	transactionData, err := parser.ParseTransaction()
+	if err != nil {
+		log.Fatalf("Error parsing transaction: %s", err)
+	}
+
+	// Print the parsed transaction data
+	marshalledData, _ := json.MarshalIndent(transactionData, "", "  ")
+	fmt.Println(string(marshalledData))
+
+	// Process and extract swap-specific data from the parsed transaction
+	swapData, err := parser.ProcessSwapData(transactionData)
+	if err != nil {
+		log.Fatalf("Error processing swap data: %s", err)
+	}
+
+	// Print the parsed swap data
+	marshalledSwapData, _ := json.MarshalIndent(swapData, "", "  ")
+	fmt.Println(string(marshalledSwapData))
+}
+```
+
+### 3. Output
+
+The above code fetches a Solana transaction, parses its contents, and extracts swap-specific data. The `ProcessSwapData` function processes swap data and outputs it in JSON format.
+
+#### Example Output
+
+```json
+{
+  "Signers": [
+    "4k8WHszi2uBzTiypTKUYH1hzYkUBCARPPn6ZjPNMhDoc"
+  ],
+  "Signatures": [
+    "2XYu86VrUXiwNNj8WvngcXGytrCsSrpay69Rt3XBz9YZvCQcZJLjvDfh9UWETFtFW47vi4xG2CkiarRJwSe6VekE"
+  ],
+  "AMMs": [
+    "Moonshot"
+  ],
+  "Timestamp": "0001-01-01T00:00:00Z",
+  "TokenInMint": "CQn88snXCipTxn6DBbwgSA7d9v1sXPmyxzCNNiVNXzFy",
+  "TokenInAmount": 59948049312246101,
+  "TokenInDecimals": 9,
+  "TokenOutMint": "So11111111111111111111111111111111111111112",
+  "TokenOutAmount": 1711486459,
+  "TokenOutDecimals":
+```
+
+### Notes
+
+- Ensure you replace `txSig` with a valid Solana transaction signature.
+- The parser currently supports specific AMMs (e.g., Raydium, Orca, Pumpfun, etc.). Transactions involving unsupported programs may not be parsed correctly.
 
 ## Note
 
@@ -36,22 +140,3 @@ A basic example of how to use the solanaswap-go package is in the `main.go` file
 - MoonShot
 - Pumpfun
 - Jupiter
-
-## Example Output
-
-```json
-{
-  "Signers": ["AkQWv1Qnvua6zJch9JrFe8a9YVE4QxCkvc3dgmHvc4Qn"],
-  "Signatures": [
-    "5kaAWK5X9DdMmsWm6skaUXLd6prFisuYJavd9B62A941nRGcrmwvncg3tRtUfn7TcMLsrrmjCChdEjK3sjxS6YG9"
-  ],
-  "AMMs": ["Raydium", "Raydium"],
-  "Timestamp": "0001-01-01T00:00:00Z",
-  "TokenInMint": "5bpj3W9zC2Y5Zn2jDBcYVscGnCBUN5RD7152cfL9pump",
-  "TokenInAmount": 38202111872,
-  "TokenInDecimals": 6,
-  "TokenOutMint": "So11111111111111111111111111111111111111112",
-  "TokenOutAmount": 1125839750,
-  "TokenOutDecimals": 9
-}
-```
