@@ -85,7 +85,8 @@ func (p *Parser) ParseTransaction() ([]SwapData, error) {
 			progID.Equals(RAYDIUM_CPMM_PROGRAM_ID) ||
 			progID.Equals(RAYDIUM_AMM_PROGRAM_ID) ||
 			progID.Equals(RAYDIUM_CONCENTRATED_LIQUIDITY_PROGRAM_ID) || // RaydConcentratedLiquiditySwapV2
-			progID.Equals(solana.MustPublicKeyFromBase58("AP51WLiiqTdbZfgyRMs35PsZpdmLuPDdHYmrB23pEtMU")): // RaydConcentratedLiquiditySwap
+			progID.Equals(solana.MustPublicKeyFromBase58("AP51WLiiqTdbZfgyRMs35PsZpdmLuPDdHYmrB23pEtMU")) || // RaydConcentratedLiquiditySwap
+			progID.Equals(BANANA_GUN_PROGRAM_ID):
 			parsedSwaps = append(parsedSwaps, p.processRaydSwaps(i)...)
 		case progID.Equals(ORCA_PROGRAM_ID):
 			parsedSwaps = append(parsedSwaps, p.processOrcaSwaps(i)...)
