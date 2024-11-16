@@ -140,3 +140,9 @@ The above code fetches a Solana transaction, parses its contents, and extracts s
 - MoonShot
 - Pumpfun
 - Jupiter
+
+## Supported Sniper Trading Bots
+
+- BananaGun Bot
+- Bloom Bot
+- MinTech
