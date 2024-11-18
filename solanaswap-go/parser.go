@@ -71,10 +71,17 @@ func (p *Parser) ParseTransaction() ([]SwapData, error) {
 		case progID.Equals(MOONSHOT_PROGRAM_ID):
 			skip = true
 			parsedSwaps = append(parsedSwaps, p.processMoonshotSwaps()...)
+		case progID.Equals(BANANA_GUN_PROGRAM_ID) ||
+			progID.Equals(MINTECH_PROGRAM_ID) ||
+			progID.Equals(BLOOM_PROGRAM_ID) ||
+			progID.Equals(MAESTRO_PROGRAM_ID):
+			// Check inner instructions to determine which swap protocol is being used
+			if innerSwaps := p.processTradingBotSwaps(i); len(innerSwaps) > 0 {
+				parsedSwaps = append(parsedSwaps, innerSwaps...)
+			}
 		}
 	}
 	if skip {
-		// avoid processing other swaps if Jupiter is an aggregator and other swaps are already included in the Jupiter swap
 		return parsedSwaps, nil
 	}
 
@@ -84,9 +91,8 @@ func (p *Parser) ParseTransaction() ([]SwapData, error) {
 		case progID.Equals(RAYDIUM_V4_PROGRAM_ID) ||
 			progID.Equals(RAYDIUM_CPMM_PROGRAM_ID) ||
 			progID.Equals(RAYDIUM_AMM_PROGRAM_ID) ||
-			progID.Equals(RAYDIUM_CONCENTRATED_LIQUIDITY_PROGRAM_ID) || // RaydConcentratedLiquiditySwapV2
-			progID.Equals(solana.MustPublicKeyFromBase58("AP51WLiiqTdbZfgyRMs35PsZpdmLuPDdHYmrB23pEtMU")) || // RaydConcentratedLiquiditySwap
-			progID.Equals(BANANA_GUN_PROGRAM_ID) || progID.Equals(MINTECH_PROGRAM_ID) || progID.Equals(BLOOM_PROGRAM_ID): // Trading Bots
+			progID.Equals(RAYDIUM_CONCENTRATED_LIQUIDITY_PROGRAM_ID) ||
+			progID.Equals(solana.MustPublicKeyFromBase58("AP51WLiiqTdbZfgyRMs35PsZpdmLuPDdHYmrB23pEtMU")):
 			parsedSwaps = append(parsedSwaps, p.processRaydSwaps(i)...)
 		case progID.Equals(ORCA_PROGRAM_ID):
 			parsedSwaps = append(parsedSwaps, p.processOrcaSwaps(i)...)
@@ -243,4 +249,70 @@ func (p *Parser) ProcessSwapData(swapDatas []SwapData) (*SwapInfo, error) {
 	}
 
 	return swapInfo, nil
+}
+
+func (p *Parser) processTradingBotSwaps(instructionIndex int) []SwapData {
+	var swaps []SwapData
+
+	// get inner instructions for this index
+	innerInstructions := p.getInnerInstructions(instructionIndex)
+	if len(innerInstructions) == 0 {
+		return swaps
+	}
+
+	// track which protocols we've processed to avoid duplicates
+	processedProtocols := make(map[string]bool)
+
+	// check program IDs of inner instructions to determine swap type
+	for _, inner := range innerInstructions {
+		progID := p.allAccountKeys[inner.ProgramIDIndex]
+
+		switch {
+		case (progID.Equals(RAYDIUM_V4_PROGRAM_ID) ||
+			progID.Equals(RAYDIUM_CPMM_PROGRAM_ID) ||
+			progID.Equals(RAYDIUM_AMM_PROGRAM_ID) ||
+			progID.Equals(RAYDIUM_CONCENTRATED_LIQUIDITY_PROGRAM_ID)) && !processedProtocols["raydium"]:
+			processedProtocols["raydium"] = true
+			if raydSwaps := p.processRaydSwaps(instructionIndex); len(raydSwaps) > 0 {
+				swaps = append(swaps, raydSwaps...)
+			}
+
+		case progID.Equals(ORCA_PROGRAM_ID) && !processedProtocols["orca"]:
+			processedProtocols["orca"] = true
+			if orcaSwaps := p.processOrcaSwaps(instructionIndex); len(orcaSwaps) > 0 {
+				swaps = append(swaps, orcaSwaps...)
+			}
+
+		case (progID.Equals(METEORA_PROGRAM_ID) ||
+			progID.Equals(METEORA_POOLS_PROGRAM_ID)) && !processedProtocols["meteora"]:
+			processedProtocols["meteora"] = true
+			if meteoraSwaps := p.processMeteoraSwaps(instructionIndex); len(meteoraSwaps) > 0 {
+				swaps = append(swaps, meteoraSwaps...)
+			}
+
+		case (progID.Equals(PUMP_FUN_PROGRAM_ID) ||
+			progID.Equals(solana.MustPublicKeyFromBase58("BSfD6SHZigAfDWSjzD5Q41jw8LmKwtmjskPH9XW1mrRW"))) && !processedProtocols["pumpfun"]:
+			processedProtocols["pumpfun"] = true
+			if pumpfunSwaps := p.processPumpfunSwaps(instructionIndex); len(pumpfunSwaps) > 0 {
+				swaps = append(swaps, pumpfunSwaps...)
+			}
+		}
+	}
+
+	return swaps
+}
+
+// helper function to get inner instructions for a given instruction index
+func (p *Parser) getInnerInstructions(index int) []solana.CompiledInstruction {
+	if p.tx.Meta == nil || p.tx.Meta.InnerInstructions == nil {
+		return nil
+	}
+
+	for _, inner := range p.tx.Meta.InnerInstructions {
+		if inner.Index == uint16(index) {
+			return inner.Instructions
+		}
+	}
+
+	return nil
 }
