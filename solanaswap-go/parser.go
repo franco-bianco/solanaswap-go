@@ -94,6 +94,13 @@ func (p *Parser) ParseTransaction() ([]SwapData, error) {
 			progID.Equals(RAYDIUM_CONCENTRATED_LIQUIDITY_PROGRAM_ID) ||
 			progID.Equals(solana.MustPublicKeyFromBase58("AP51WLiiqTdbZfgyRMs35PsZpdmLuPDdHYmrB23pEtMU")):
 			parsedSwaps = append(parsedSwaps, p.processRaydSwaps(i)...)
+		case progID.Equals(OKX_PROGRAM_ID):
+			for _, v := range p.allAccountKeys {
+				if v.Equals(RAYDIUM_V4_PROGRAM_ID) {
+					parsedSwaps = append(parsedSwaps, p.processRaydSwaps(i)...)
+					break
+				}
+			}
 		case progID.Equals(ORCA_PROGRAM_ID):
 			parsedSwaps = append(parsedSwaps, p.processOrcaSwaps(i)...)
 		case progID.Equals(METEORA_PROGRAM_ID) || progID.Equals(METEORA_POOLS_PROGRAM_ID):
@@ -132,7 +139,7 @@ func (p *Parser) ProcessSwapData(swapDatas []SwapData) (*SwapInfo, error) {
 	swapInfo := &SwapInfo{
 		Signers:    txInfo.Message.Signers(),
 		Signatures: txInfo.Signatures,
-		// TODO: add timestamp (get from block)
+		Timestamp:  p.tx.BlockTime.Time(),
 	}
 
 	for i, swapData := range swapDatas {
@@ -146,6 +153,7 @@ func (p *Parser) ProcessSwapData(swapDatas []SwapData) (*SwapInfo, error) {
 			if err != nil {
 				return nil, fmt.Errorf("failed to convert to swap info: %w", err)
 			}
+			jupiterSwapInfo.Timestamp = swapInfo.Timestamp
 			jupiterSwapInfo.Signatures = swapInfo.Signatures
 			return jupiterSwapInfo, nil
 		case PUMP_FUN:
@@ -247,7 +255,6 @@ func (p *Parser) ProcessSwapData(swapDatas []SwapData) (*SwapInfo, error) {
 		}
 		swapInfo.AMMs = append(swapInfo.AMMs, string(swapData.Type))
 	}
-
 	return swapInfo, nil
 }
 

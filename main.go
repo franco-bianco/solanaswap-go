@@ -33,7 +33,7 @@ Example Transactions:
 
 func main() {
 	rpcClient := rpc.New(rpc.MainNetBeta.RPC)
-	txSig := solana.MustSignatureFromBase58("mWaH4FELcPj4zeY4Cgk5gxUirQDM7yE54VgMEVaqiUDQjStyzwNrxLx4FMEaKEHQoYsgCRhc1YdmBvhGDRVgRrq")
+	txSig := solana.MustSignatureFromBase58("DBctXdTTtvn7Rr4ikeJFCBz4AtHmJRyjHGQFpE59LuY3Shb7UcRJThAXC7TGRXXskXuu9LEm9RqtU6mWxe5cjPF")
 
 	var maxTxVersion uint64 = 0
 	tx, err := rpcClient.GetTransaction(
@@ -58,8 +58,9 @@ func main() {
 		log.Fatalf("error parsing transaction: %s", err)
 	}
 
-	marshalledData, _ := json.MarshalIndent(transactionData, "", "  ")
-	fmt.Println(string(marshalledData))
+	// marshalledData, _ := json.MarshalIndent(transactionData, "", "  ")
+	// fmt.Println(string(marshalledData))
+	// return
 
 	swapData, err := parser.ProcessSwapData(transactionData)
 	if err != nil {
