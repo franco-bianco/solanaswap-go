@@ -33,6 +33,11 @@ Example Transactions:
 
 func main() {
 	rpcClient := rpc.New(rpc.MainNetBeta.RPC)
+	fetchSignatureTx(rpcClient)
+	fetchBlockTx(rpcClient)
+}
+
+func fetchSignatureTx(rpcClient *rpc.Client) {
 	txSig := solana.MustSignatureFromBase58("DBctXdTTtvn7Rr4ikeJFCBz4AtHmJRyjHGQFpE59LuY3Shb7UcRJThAXC7TGRXXskXuu9LEm9RqtU6mWxe5cjPF")
 
 	var maxTxVersion uint64 = 0
@@ -69,5 +74,43 @@ func main() {
 
 	marshalledSwapData, _ := json.MarshalIndent(swapData, "", "  ")
 	fmt.Println(string(marshalledSwapData))
+}
 
+func fetchBlockTx(rpcClient *rpc.Client) {
+	maxSupportedTransactionVersion := uint64(0)
+	out, err := rpcClient.GetBlockWithOpts(context.TODO(), uint64(305312172), &rpc.GetBlockOpts{
+		MaxSupportedTransactionVersion: &maxSupportedTransactionVersion,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	for _, tx := range out.Transactions {
+		tx.BlockTime = out.BlockTime
+		tx.Slot = out.ParentSlot + 1
+
+		parser, err := solanaswapgo.NewBlockTransactionParser(tx)
+		if err != nil {
+			log.Fatalf("error creating orca parser: %s", err)
+		}
+
+		transactionData, err := parser.ParseTransaction()
+		if err != nil {
+			log.Fatalf("error parsing transaction: %s", err)
+		}
+
+		// marshalledData, _ := json.MarshalIndent(transactionData, "", "  ")
+		// spew.Dump(transactionData)
+		// return
+		swapData, err := parser.ProcessSwapData(transactionData)
+		if err != nil {
+			log.Fatalf("error processing swap data: %s", err)
+		}
+
+		marshalledSwapData, _ := json.MarshalIndent(swapData, "", "  ")
+		if "3gtHe9aUoBiiyZBNuiWpAjqMz6LCK7V6LXijHJNbL1DtRdFyBsTrXgMV4sDcU7PEHeyYhyPxXt6Ynt1mkE6wsRVz" == swapData.Signatures[0].String() {
+			fmt.Println(string(marshalledSwapData))
+			return
+		}
+	}
 }
