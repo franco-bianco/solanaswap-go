@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 
 	solanaswapgo "github.com/franco-bianco/solanaswap-go/solanaswap-go"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/gagliardetto/solana-go/rpc/jsonrpc"
 )
 
 /*
@@ -77,17 +79,22 @@ func fetchSignatureTx(rpcClient *rpc.Client) {
 }
 
 func fetchBlockTx(rpcClient *rpc.Client) {
+	blockNumber := uint64(305312172)
 	maxSupportedTransactionVersion := uint64(0)
-	out, err := rpcClient.GetBlockWithOpts(context.TODO(), uint64(305312172), &rpc.GetBlockOpts{
+	out, err := rpcClient.GetBlockWithOpts(context.TODO(), blockNumber, &rpc.GetBlockOpts{
 		MaxSupportedTransactionVersion: &maxSupportedTransactionVersion,
 	})
 	if err != nil {
+		if strings.HasSuffix(err.(*jsonrpc.RPCError).Message, "was skipped, or missing due to ledger jump to recent snapshot") {
+			log.Println("skipped block: ", blockNumber)
+			return
+		}
 		panic(err)
 	}
 
 	for _, tx := range out.Transactions {
 		tx.BlockTime = out.BlockTime
-		tx.Slot = out.ParentSlot + 1
+		tx.Slot = blockNumber // out.ParentSlot+1 It's wrong. The previous block is not continuous and there will be bad blocks in the middle.
 
 		parser, err := solanaswapgo.NewBlockTransactionParser(tx)
 		if err != nil {
