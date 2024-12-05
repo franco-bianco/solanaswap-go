@@ -53,6 +53,46 @@ func NewTransactionParser(tx *rpc.GetTransactionResult) (*Parser, error) {
 	return parser, nil
 }
 
+func NewBlockTransactionParser(tx rpc.TransactionWithMeta) (*Parser, error) {
+
+	txInfo, err := tx.GetTransaction()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transaction: %w", err)
+	}
+
+	allAccountKeys := append(txInfo.Message.AccountKeys, tx.Meta.LoadedAddresses.Writable...)
+	allAccountKeys = append(allAccountKeys, tx.Meta.LoadedAddresses.ReadOnly...)
+
+	log := logrus.New()
+	log.SetFormatter(&logrus.TextFormatter{
+		TimestampFormat: "2006-01-02 15:04:05",
+		FullTimestamp:   true,
+	})
+
+	parser := &Parser{
+		tx: &rpc.GetTransactionResult{
+			Slot:      tx.Slot,
+			BlockTime: tx.BlockTime,
+			// Transaction: tx.Transaction,
+			Meta:    tx.Meta,
+			Version: tx.Version,
+		},
+		txInfo:         txInfo,
+		allAccountKeys: allAccountKeys,
+		Log:            log,
+	}
+
+	if err := parser.extractSPLTokenInfo(); err != nil {
+		return nil, fmt.Errorf("failed to extract SPL Token Addresses: %w", err)
+	}
+
+	if err := parser.extractSPLDecimals(); err != nil {
+		return nil, fmt.Errorf("failed to extract SPL decimals: %w", err)
+	}
+
+	return parser, nil
+}
+
 type SwapData struct {
 	Type SwapType
 	Data interface{}
@@ -94,6 +134,13 @@ func (p *Parser) ParseTransaction() ([]SwapData, error) {
 			progID.Equals(RAYDIUM_CONCENTRATED_LIQUIDITY_PROGRAM_ID) ||
 			progID.Equals(solana.MustPublicKeyFromBase58("AP51WLiiqTdbZfgyRMs35PsZpdmLuPDdHYmrB23pEtMU")):
 			parsedSwaps = append(parsedSwaps, p.processRaydSwaps(i)...)
+		case progID.Equals(OKX_PROGRAM_ID):
+			for _, v := range p.allAccountKeys {
+				if v.Equals(RAYDIUM_V4_PROGRAM_ID) {
+					parsedSwaps = append(parsedSwaps, p.processRaydSwaps(i)...)
+					break
+				}
+			}
 		case progID.Equals(ORCA_PROGRAM_ID):
 			parsedSwaps = append(parsedSwaps, p.processOrcaSwaps(i)...)
 		case progID.Equals(METEORA_PROGRAM_ID) || progID.Equals(METEORA_POOLS_PROGRAM_ID):
@@ -111,6 +158,7 @@ type SwapInfo struct {
 	Signers    []solana.PublicKey
 	Signatures []solana.Signature
 	AMMs       []string
+	Slot       uint64
 	Timestamp  time.Time
 
 	TokenInMint     solana.PublicKey
@@ -124,15 +172,17 @@ type SwapInfo struct {
 
 func (p *Parser) ProcessSwapData(swapDatas []SwapData) (*SwapInfo, error) {
 
-	txInfo, err := p.tx.Transaction.GetTransaction()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get transaction: %w", err)
-	}
+	// txInfo, err := p.tx.Transaction.GetTransaction()
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to get transaction: %w", err)
+	// }
+	txInfo := p.txInfo
 
 	swapInfo := &SwapInfo{
 		Signers:    txInfo.Message.Signers(),
 		Signatures: txInfo.Signatures,
-		// TODO: add timestamp (get from block)
+		Timestamp:  p.tx.BlockTime.Time(),
+		Slot:       p.tx.Slot,
 	}
 
 	for i, swapData := range swapDatas {
@@ -247,7 +297,6 @@ func (p *Parser) ProcessSwapData(swapDatas []SwapData) (*SwapInfo, error) {
 		}
 		swapInfo.AMMs = append(swapInfo.AMMs, string(swapData.Type))
 	}
-
 	return swapInfo, nil
 }
 

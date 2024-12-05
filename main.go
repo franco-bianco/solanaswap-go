@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 
 	solanaswapgo "github.com/franco-bianco/solanaswap-go/solanaswap-go"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/gagliardetto/solana-go/rpc/jsonrpc"
 )
 
 /*
@@ -33,7 +35,12 @@ Example Transactions:
 
 func main() {
 	rpcClient := rpc.New(rpc.MainNetBeta.RPC)
-	txSig := solana.MustSignatureFromBase58("mWaH4FELcPj4zeY4Cgk5gxUirQDM7yE54VgMEVaqiUDQjStyzwNrxLx4FMEaKEHQoYsgCRhc1YdmBvhGDRVgRrq")
+	fetchSignatureTx(rpcClient)
+	fetchBlockTx(rpcClient)
+}
+
+func fetchSignatureTx(rpcClient *rpc.Client) {
+	txSig := solana.MustSignatureFromBase58("DBctXdTTtvn7Rr4ikeJFCBz4AtHmJRyjHGQFpE59LuY3Shb7UcRJThAXC7TGRXXskXuu9LEm9RqtU6mWxe5cjPF")
 
 	var maxTxVersion uint64 = 0
 	tx, err := rpcClient.GetTransaction(
@@ -58,8 +65,9 @@ func main() {
 		log.Fatalf("error parsing transaction: %s", err)
 	}
 
-	marshalledData, _ := json.MarshalIndent(transactionData, "", "  ")
-	fmt.Println(string(marshalledData))
+	// marshalledData, _ := json.MarshalIndent(transactionData, "", "  ")
+	// fmt.Println(string(marshalledData))
+	// return
 
 	swapData, err := parser.ProcessSwapData(transactionData)
 	if err != nil {
@@ -68,5 +76,48 @@ func main() {
 
 	marshalledSwapData, _ := json.MarshalIndent(swapData, "", "  ")
 	fmt.Println(string(marshalledSwapData))
+}
 
+func fetchBlockTx(rpcClient *rpc.Client) {
+	blockNumber := uint64(305312172)
+	maxSupportedTransactionVersion := uint64(0)
+	out, err := rpcClient.GetBlockWithOpts(context.TODO(), blockNumber, &rpc.GetBlockOpts{
+		MaxSupportedTransactionVersion: &maxSupportedTransactionVersion,
+	})
+	if err != nil {
+		if strings.HasSuffix(err.(*jsonrpc.RPCError).Message, "was skipped, or missing due to ledger jump to recent snapshot") {
+			log.Println("skipped block: ", blockNumber)
+			return
+		}
+		panic(err)
+	}
+
+	for _, tx := range out.Transactions {
+		tx.BlockTime = out.BlockTime
+		tx.Slot = blockNumber // out.ParentSlot+1 It's wrong. The previous block is not continuous and there will be bad blocks in the middle.
+
+		parser, err := solanaswapgo.NewBlockTransactionParser(tx)
+		if err != nil {
+			log.Fatalf("error creating orca parser: %s", err)
+		}
+
+		transactionData, err := parser.ParseTransaction()
+		if err != nil {
+			log.Fatalf("error parsing transaction: %s", err)
+		}
+
+		// marshalledData, _ := json.MarshalIndent(transactionData, "", "  ")
+		// spew.Dump(transactionData)
+		// return
+		swapData, err := parser.ProcessSwapData(transactionData)
+		if err != nil {
+			log.Fatalf("error processing swap data: %s", err)
+		}
+
+		marshalledSwapData, _ := json.MarshalIndent(swapData, "", "  ")
+		if "3gtHe9aUoBiiyZBNuiWpAjqMz6LCK7V6LXijHJNbL1DtRdFyBsTrXgMV4sDcU7PEHeyYhyPxXt6Ynt1mkE6wsRVz" == swapData.Signatures[0].String() {
+			fmt.Println(string(marshalledSwapData))
+			return
+		}
+	}
 }

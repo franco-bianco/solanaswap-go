@@ -213,7 +213,9 @@ func (p *Parser) convertToSwapInfo(intermediateInfo *jupiterSwapInfo) (*SwapInfo
 	}
 
 	swapInfo := &SwapInfo{
-		AMMs: intermediateInfo.AMMs,
+		AMMs:      intermediateInfo.AMMs,
+		Slot:      p.tx.Slot,
+		Timestamp: p.tx.BlockTime.Time(),
 	}
 
 	for mint, amount := range intermediateInfo.TokenIn {
