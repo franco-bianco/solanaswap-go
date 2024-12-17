@@ -205,7 +205,7 @@ func parseJupiterEvents(events []SwapData) (*jupiterSwapInfo, error) {
 // convertToSwapInfo converts the intermediate Jupiter swap data to a SwapInfo struct.
 func (p *Parser) convertToSwapInfo(intermediateInfo *jupiterSwapInfo) (*SwapInfo, error) {
 
-	if len(intermediateInfo.TokenIn) != 1 || len(intermediateInfo.TokenOut) != 1 {
+	if len(intermediateInfo.TokenIn) != len(intermediateInfo.TokenOut) {
 		return nil, fmt.Errorf("invalid swap: expected 1 input and 1 output token, got %d input(s) and %d output(s)",
 			len(intermediateInfo.TokenIn),
 			len(intermediateInfo.TokenOut),
