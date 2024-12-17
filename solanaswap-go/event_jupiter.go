@@ -27,7 +27,7 @@ var JupiterRouteEventDiscriminator = [16]byte{228, 69, 165, 46, 81, 203, 154, 29
 
 func (p *Parser) processJupiterSwaps(instructionIndex int) []SwapData {
 	var swaps []SwapData
-	for _, innerInstructionSet := range p.tx.Meta.InnerInstructions {
+	for _, innerInstructionSet := range p.meta.InnerInstructions {
 		if innerInstructionSet.Index == uint16(instructionIndex) {
 			for _, innerInstruction := range innerInstructionSet.Instructions {
 				if p.isJupiterRouteEventInstruction(innerInstruction) {
@@ -96,7 +96,7 @@ func handleJupiterRouteEvent(decoder *ag_binary.Decoder) (*JupiterSwapEvent, err
 func (p *Parser) extractSPLDecimals() error {
 	mintToDecimals := make(map[string]uint8)
 
-	for _, accountInfo := range p.tx.Meta.PostTokenBalances {
+	for _, accountInfo := range p.meta.PostTokenBalances {
 		if !accountInfo.Mint.IsZero() {
 			mintAddress := accountInfo.Mint.String()
 			mintToDecimals[mintAddress] = uint8(accountInfo.UiTokenAmount.Decimals)
@@ -125,7 +125,7 @@ func (p *Parser) extractSPLDecimals() error {
 	for _, instr := range p.txInfo.Message.Instructions {
 		processInstruction(instr)
 	}
-	for _, innerSet := range p.tx.Meta.InnerInstructions {
+	for _, innerSet := range p.meta.InnerInstructions {
 		for _, instr := range innerSet.Instructions {
 			processInstruction(instr)
 		}
