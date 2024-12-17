@@ -20,7 +20,7 @@ type Parser struct {
 }
 
 func NewParserFromBlockTx(tx *rpc.TransactionWithMeta) (*Parser, error) {
-	txInfo, err := tx.GetParsedTransaction()
+	txInfo, err := tx.GetTransaction()
 
 	if err != nil {
 		return nil, err
