@@ -27,7 +27,7 @@ type TokenInfo struct {
 
 func (p *Parser) processRaydSwaps(instructionIndex int) []SwapData {
 	var swaps []SwapData
-	for _, innerInstructionSet := range p.tx.Meta.InnerInstructions {
+	for _, innerInstructionSet := range p.meta.InnerInstructions {
 		if innerInstructionSet.Index == uint16(instructionIndex) {
 			for _, innerInstruction := range innerInstructionSet.Instructions {
 				switch {
@@ -50,7 +50,7 @@ func (p *Parser) processRaydSwaps(instructionIndex int) []SwapData {
 
 func (p *Parser) processOrcaSwaps(instructionIndex int) []SwapData {
 	var swaps []SwapData
-	for _, innerInstructionSet := range p.tx.Meta.InnerInstructions {
+	for _, innerInstructionSet := range p.meta.InnerInstructions {
 		if innerInstructionSet.Index == uint16(instructionIndex) {
 			for _, innerInstruction := range innerInstructionSet.Instructions {
 				if p.isTransfer(innerInstruction) {
@@ -91,7 +91,7 @@ func (p *Parser) processTransfer(instr solana.CompiledInstruction) *TransferData
 func (p *Parser) extractSPLTokenInfo() error {
 	splTokenAddresses := make(map[string]TokenInfo)
 
-	for _, accountInfo := range p.tx.Meta.PostTokenBalances {
+	for _, accountInfo := range p.meta.PostTokenBalances {
 		if !accountInfo.Mint.IsZero() {
 			accountKey := p.allAccountKeys[accountInfo.AccountIndex].String()
 			splTokenAddresses[accountKey] = TokenInfo{
@@ -128,7 +128,7 @@ func (p *Parser) extractSPLTokenInfo() error {
 	for _, instr := range p.txInfo.Message.Instructions {
 		processInstruction(instr)
 	}
-	for _, innerSet := range p.tx.Meta.InnerInstructions {
+	for _, innerSet := range p.meta.InnerInstructions {
 		for _, instr := range innerSet.Instructions {
 			processInstruction(instr)
 		}

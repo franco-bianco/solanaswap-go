@@ -27,7 +27,7 @@ type TransferCheck struct {
 
 func (p *Parser) processMeteoraSwaps(instructionIndex int) []SwapData {
 	var swaps []SwapData
-	for _, innerInstructionSet := range p.tx.Meta.InnerInstructions {
+	for _, innerInstructionSet := range p.meta.InnerInstructions {
 		if innerInstructionSet.Index == uint16(instructionIndex) {
 			for _, innerInstruction := range innerInstructionSet.Instructions {
 				switch {
