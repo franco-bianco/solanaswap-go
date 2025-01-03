@@ -140,9 +140,11 @@ The above code fetches a Solana transaction, parses its contents, and extracts s
 - MoonShot
 - Pumpfun
 - Jupiter
+- OKX Dex Router
 
 ## Supported Sniper Trading Bots
 
 - BananaGun Bot
 - Bloom Bot
 - MinTech
+- Nova Bot
