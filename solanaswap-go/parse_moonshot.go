@@ -99,10 +99,10 @@ func (p *Parser) parseMoonshotTradeInstruction(instruction solana.CompiledInstru
 func (p *Parser) getTokenBalanceChanges(mint solana.PublicKey) (int64, error) {
 	if mint == NATIVE_SOL_MINT_PROGRAM_ID {
 		// For native SOL, we'll use the first account (index 0) which is typically the fee payer/signer
-		if len(p.tx.Meta.PostBalances) == 0 || len(p.tx.Meta.PreBalances) == 0 {
+		if len(p.txMeta.PostBalances) == 0 || len(p.txMeta.PreBalances) == 0 {
 			return 0, fmt.Errorf("insufficient balance information for SOL")
 		}
-		change := int64(p.tx.Meta.PostBalances[0]) - int64(p.tx.Meta.PreBalances[0])
+		change := int64(p.txMeta.PostBalances[0]) - int64(p.txMeta.PreBalances[0])
 		return change, nil
 	}
 
@@ -112,7 +112,7 @@ func (p *Parser) getTokenBalanceChanges(mint solana.PublicKey) (int64, error) {
 	var preAmount, postAmount int64
 	var balanceFound bool
 
-	for _, preBalance := range p.tx.Meta.PreTokenBalances {
+	for _, preBalance := range p.txMeta.PreTokenBalances {
 		if preBalance.Mint.Equals(mint) && preBalance.Owner.Equals(signer) {
 			preAmount, _ = strconv.ParseInt(preBalance.UiTokenAmount.Amount, 10, 64)
 			balanceFound = true
@@ -120,7 +120,7 @@ func (p *Parser) getTokenBalanceChanges(mint solana.PublicKey) (int64, error) {
 		}
 	}
 
-	for _, postBalance := range p.tx.Meta.PostTokenBalances {
+	for _, postBalance := range p.txMeta.PostTokenBalances {
 		if postBalance.Mint.Equals(mint) && postBalance.Owner.Equals(signer) {
 			postAmount, _ = strconv.ParseInt(postBalance.UiTokenAmount.Amount, 10, 64)
 			balanceFound = true
