@@ -35,7 +35,7 @@ type PumpfunCreateEvent struct {
 
 func (p *Parser) processPumpfunSwaps(instructionIndex int) []SwapData {
 	var swaps []SwapData
-	for _, innerInstructionSet := range p.tx.Meta.InnerInstructions {
+	for _, innerInstructionSet := range p.txMeta.InnerInstructions {
 		if innerInstructionSet.Index == uint16(instructionIndex) {
 			for _, innerInstruction := range innerInstructionSet.Instructions {
 				if p.isPumpFunTradeEventInstruction(innerInstruction) {
@@ -54,7 +54,6 @@ func (p *Parser) processPumpfunSwaps(instructionIndex int) []SwapData {
 }
 
 func (p *Parser) parsePumpfunTradeEventInstruction(instruction solana.CompiledInstruction) (*PumpfunTradeEvent, error) {
-
 	decodedBytes, err := base58.Decode(instruction.Data.String())
 	if err != nil {
 		return nil, fmt.Errorf("error decoding instruction data: %s", err)

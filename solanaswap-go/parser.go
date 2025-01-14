@@ -11,7 +11,7 @@ import (
 )
 
 type Parser struct {
-	tx              *rpc.GetTransactionResult
+	txMeta          *rpc.TransactionMeta
 	txInfo          *solana.Transaction
 	allAccountKeys  solana.PublicKeySlice
 	splTokenInfoMap map[string]TokenInfo // map[authority]TokenInfo
@@ -20,14 +20,17 @@ type Parser struct {
 }
 
 func NewTransactionParser(tx *rpc.GetTransactionResult) (*Parser, error) {
-
 	txInfo, err := tx.Transaction.GetTransaction()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transaction: %w", err)
 	}
 
-	allAccountKeys := append(txInfo.Message.AccountKeys, tx.Meta.LoadedAddresses.Writable...)
-	allAccountKeys = append(allAccountKeys, tx.Meta.LoadedAddresses.ReadOnly...)
+	return NewTransactionParserFromTransaction(txInfo, tx.Meta)
+}
+
+func NewTransactionParserFromTransaction(tx *solana.Transaction, txMeta *rpc.TransactionMeta) (*Parser, error) {
+	allAccountKeys := append(tx.Message.AccountKeys, txMeta.LoadedAddresses.Writable...)
+	allAccountKeys = append(allAccountKeys, txMeta.LoadedAddresses.ReadOnly...)
 
 	log := logrus.New()
 	log.SetFormatter(&logrus.TextFormatter{
@@ -36,8 +39,8 @@ func NewTransactionParser(tx *rpc.GetTransactionResult) (*Parser, error) {
 	})
 
 	parser := &Parser{
-		tx:             tx,
-		txInfo:         txInfo,
+		txMeta:         txMeta,
+		txInfo:         tx,
 		allAccountKeys: allAccountKeys,
 		Log:            log,
 	}
@@ -125,15 +128,9 @@ type SwapInfo struct {
 }
 
 func (p *Parser) ProcessSwapData(swapDatas []SwapData) (*SwapInfo, error) {
-
-	txInfo, err := p.tx.Transaction.GetTransaction()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get transaction: %w", err)
-	}
-
 	swapInfo := &SwapInfo{
-		Signers:    txInfo.Message.Signers(),
-		Signatures: txInfo.Signatures,
+		Signers:    p.txInfo.Message.Signers(),
+		Signatures: p.txInfo.Signatures,
 		// TODO: add timestamp (get from block)
 	}
 
@@ -306,11 +303,11 @@ func (p *Parser) processTradingBotSwaps(instructionIndex int) []SwapData {
 
 // helper function to get inner instructions for a given instruction index
 func (p *Parser) getInnerInstructions(index int) []solana.CompiledInstruction {
-	if p.tx.Meta == nil || p.tx.Meta.InnerInstructions == nil {
+	if p.txMeta == nil || p.txMeta.InnerInstructions == nil {
 		return nil
 	}
 
-	for _, inner := range p.tx.Meta.InnerInstructions {
+	for _, inner := range p.txMeta.InnerInstructions {
 		if inner.Index == uint16(index) {
 			return inner.Instructions
 		}

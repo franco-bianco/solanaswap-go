@@ -27,7 +27,7 @@ type TransferCheck struct {
 
 func (p *Parser) processMeteoraSwaps(instructionIndex int) []SwapData {
 	var swaps []SwapData
-	for _, innerInstructionSet := range p.tx.Meta.InnerInstructions {
+	for _, innerInstructionSet := range p.txMeta.InnerInstructions {
 		if innerInstructionSet.Index == uint16(instructionIndex) {
 			for _, innerInstruction := range innerInstructionSet.Instructions {
 				switch {
@@ -49,7 +49,6 @@ func (p *Parser) processMeteoraSwaps(instructionIndex int) []SwapData {
 }
 
 func (p *Parser) processTransferCheck(instr solana.CompiledInstruction) *TransferCheck {
-
 	amount := binary.LittleEndian.Uint64(instr.Data[1:9])
 
 	transferData := &TransferCheck{

@@ -27,7 +27,7 @@ var JupiterRouteEventDiscriminator = [16]byte{228, 69, 165, 46, 81, 203, 154, 29
 
 func (p *Parser) processJupiterSwaps(instructionIndex int) []SwapData {
 	var swaps []SwapData
-	for _, innerInstructionSet := range p.tx.Meta.InnerInstructions {
+	for _, innerInstructionSet := range p.txMeta.InnerInstructions {
 		if innerInstructionSet.Index == uint16(instructionIndex) {
 			for _, innerInstruction := range innerInstructionSet.Instructions {
 				if p.isJupiterRouteEventInstruction(innerInstruction) {
@@ -56,7 +56,6 @@ func (p *Parser) containsDCAProgram() bool {
 }
 
 func (p *Parser) parseJupiterRouteEventInstruction(instruction solana.CompiledInstruction) (*JupiterSwapEventData, error) {
-
 	decodedBytes, err := base58.Decode(instruction.Data.String())
 	if err != nil {
 		return nil, fmt.Errorf("error decoding instruction data: %s", err)
@@ -96,7 +95,7 @@ func handleJupiterRouteEvent(decoder *ag_binary.Decoder) (*JupiterSwapEvent, err
 func (p *Parser) extractSPLDecimals() error {
 	mintToDecimals := make(map[string]uint8)
 
-	for _, accountInfo := range p.tx.Meta.PostTokenBalances {
+	for _, accountInfo := range p.txMeta.PostTokenBalances {
 		if !accountInfo.Mint.IsZero() {
 			mintAddress := accountInfo.Mint.String()
 			mintToDecimals[mintAddress] = uint8(accountInfo.UiTokenAmount.Decimals)
@@ -125,7 +124,7 @@ func (p *Parser) extractSPLDecimals() error {
 	for _, instr := range p.txInfo.Message.Instructions {
 		processInstruction(instr)
 	}
-	for _, innerSet := range p.tx.Meta.InnerInstructions {
+	for _, innerSet := range p.txMeta.InnerInstructions {
 		for _, instr := range innerSet.Instructions {
 			processInstruction(instr)
 		}
@@ -204,7 +203,6 @@ func parseJupiterEvents(events []SwapData) (*jupiterSwapInfo, error) {
 
 // convertToSwapInfo converts the intermediate Jupiter swap data to a SwapInfo struct.
 func (p *Parser) convertToSwapInfo(intermediateInfo *jupiterSwapInfo) (*SwapInfo, error) {
-
 	if len(intermediateInfo.TokenIn) != 1 || len(intermediateInfo.TokenOut) != 1 {
 		return nil, fmt.Errorf("invalid swap: expected 1 input and 1 output token, got %d input(s) and %d output(s)",
 			len(intermediateInfo.TokenIn),
