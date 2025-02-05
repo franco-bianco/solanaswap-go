@@ -18,8 +18,6 @@ To install the solanaswap-go package, use the following command:
 go get github.com/franco-bianco/solanaswap-go
 ```
 
-Here's an improved version of the **Usage** section of the `solanaswap-go` README to make it clearer and more user-friendly:
-
 ## Usage
 
 ### 1. Import the Package
@@ -147,4 +145,5 @@ The above code fetches a Solana transaction, parses its contents, and extracts s
 - BananaGun Bot
 - Bloom Bot
 - MinTech
+- Maestro
 - Nova Bot

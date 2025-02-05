@@ -34,6 +34,7 @@ const (
 	PUMP_FUN SwapType = "PumpFun"
 	JUPITER  SwapType = "Jupiter"
 	RAYDIUM  SwapType = "Raydium"
+	OKX      SwapType = "OKX"
 	ORCA     SwapType = "Orca"
 	METEORA  SwapType = "Meteora"
 	MOONSHOT SwapType = "Moonshot"
