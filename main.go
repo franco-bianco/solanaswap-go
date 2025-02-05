@@ -34,7 +34,7 @@ Example Transactions:
 
 func main() {
 	rpcClient := rpc.New(rpc.MainNetBeta.RPC)
-	txSig := solana.MustSignatureFromBase58("zN98M48waMRTa3SQs488mdbCmY29wsSjiHUfaQ2DAAB1fmmzBh2e5j1ciXkoQSUHi3nnpfSr22J5GAYn3ZVVuW7")
+	txSig := solana.MustSignatureFromBase58("51uGEbMA4AXmiq1zM7NQAtwLFQ9K4rHEAbLdmQMyxG4JcXmuVzjDiQQHHD4pC8Dx1LCgbuhLWgkMPEeHK7YxGs2Q")
 
 	var maxTxVersion uint64 = 0
 	tx, err := rpcClient.GetTransaction(
@@ -51,7 +51,7 @@ func main() {
 
 	parser, err := solanaswapgo.NewTransactionParser(tx)
 	if err != nil {
-		log.Fatalf("error creating orca parser: %s", err)
+		log.Fatalf("error creating parser: %s", err)
 	}
 
 	transactionData, err := parser.ParseTransaction()
@@ -62,12 +62,11 @@ func main() {
 	marshalledData, _ := json.MarshalIndent(transactionData, "", "  ")
 	fmt.Println(string(marshalledData))
 
-	swapData, err := parser.ProcessSwapData(transactionData)
+	swapInfo, err := parser.ProcessSwapData(transactionData)
 	if err != nil {
 		log.Fatalf("error processing swap data: %s", err)
 	}
 
-	marshalledSwapData, _ := json.MarshalIndent(swapData, "", "  ")
+	marshalledSwapData, _ := json.MarshalIndent(swapInfo, "", "  ")
 	fmt.Println(string(marshalledSwapData))
-
 }

@@ -142,131 +142,133 @@ type SwapInfo struct {
 }
 
 func (p *Parser) ProcessSwapData(swapDatas []SwapData) (*SwapInfo, error) {
+	if len(swapDatas) == 0 {
+		return nil, fmt.Errorf("no swap data provided")
+	}
+
 	swapInfo := &SwapInfo{
-		Signers:    p.txInfo.Message.Signers(),
 		Signatures: p.txInfo.Signatures,
 	}
 
-	if len(swapDatas) == 0 {
+	if p.containsDCAProgram() {
+		swapInfo.Signers = []solana.PublicKey{p.allAccountKeys[2]}
+	} else {
+		swapInfo.Signers = []solana.PublicKey{p.allAccountKeys[0]}
+	}
+
+	jupiterSwaps := make([]SwapData, 0)
+	pumpfunSwaps := make([]SwapData, 0)
+	otherSwaps := make([]SwapData, 0)
+
+	for _, swapData := range swapDatas {
+		switch swapData.Type {
+		case JUPITER:
+			jupiterSwaps = append(jupiterSwaps, swapData)
+		case PUMP_FUN:
+			pumpfunSwaps = append(pumpfunSwaps, swapData)
+		default:
+			otherSwaps = append(otherSwaps, swapData)
+		}
+	}
+
+	if len(jupiterSwaps) > 0 {
+		jupiterInfo, err := parseJupiterEvents(jupiterSwaps)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse Jupiter events: %w", err)
+		}
+
+		swapInfo.TokenInMint = jupiterInfo.TokenInMint
+		swapInfo.TokenInAmount = jupiterInfo.TokenInAmount
+		swapInfo.TokenInDecimals = jupiterInfo.TokenInDecimals
+		swapInfo.TokenOutMint = jupiterInfo.TokenOutMint
+		swapInfo.TokenOutAmount = jupiterInfo.TokenOutAmount
+		swapInfo.TokenOutDecimals = jupiterInfo.TokenOutDecimals
+		swapInfo.AMMs = jupiterInfo.AMMs
+
 		return swapInfo, nil
 	}
 
-	if len(swapDatas) > 0 {
-		switch swapDatas[0].Type {
-		case JUPITER:
-			intermediateInfo, err := parseJupiterEvents(swapDatas)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse Jupiter events: %w", err)
-			}
-			jupiterSwapInfo, err := p.convertToSwapInfo(intermediateInfo)
-			if err != nil {
-				return nil, fmt.Errorf("failed to convert to swap info: %w", err)
-			}
-			jupiterSwapInfo.Signatures = swapInfo.Signatures
-			return jupiterSwapInfo, nil
-
-		case PUMP_FUN:
-			if swapDatas[0].Data.(*PumpfunTradeEvent).IsBuy {
-				swapInfo.TokenInMint = NATIVE_SOL_MINT_PROGRAM_ID
-				swapInfo.TokenInAmount = swapDatas[0].Data.(*PumpfunTradeEvent).SolAmount
-				swapInfo.TokenInDecimals = 9
-				swapInfo.TokenOutMint = swapDatas[0].Data.(*PumpfunTradeEvent).Mint
-				swapInfo.TokenOutAmount = swapDatas[0].Data.(*PumpfunTradeEvent).TokenAmount
-				swapInfo.TokenOutDecimals = p.splDecimalsMap[swapInfo.TokenOutMint.String()]
-			} else {
-				swapInfo.TokenInMint = swapDatas[0].Data.(*PumpfunTradeEvent).Mint
-				swapInfo.TokenInAmount = swapDatas[0].Data.(*PumpfunTradeEvent).TokenAmount
-				swapInfo.TokenInDecimals = p.splDecimalsMap[swapInfo.TokenInMint.String()]
-				swapInfo.TokenOutMint = NATIVE_SOL_MINT_PROGRAM_ID
-				swapInfo.TokenOutAmount = swapDatas[0].Data.(*PumpfunTradeEvent).SolAmount
-				swapInfo.TokenOutDecimals = 9
-			}
-			swapInfo.AMMs = append(swapInfo.AMMs, string(swapDatas[0].Type))
-			swapInfo.Timestamp = time.Unix(int64(swapDatas[0].Data.(*PumpfunTradeEvent).Timestamp), 0)
-			return swapInfo, nil
-
-		case MOONSHOT:
-			swapData := swapDatas[0].Data.(*MoonshotTradeInstructionWithMint)
-			switch swapData.TradeType {
-			case TradeTypeBuy:
-				swapInfo.TokenInMint = NATIVE_SOL_MINT_PROGRAM_ID
-				swapInfo.TokenInAmount = swapData.CollateralAmount
-				swapInfo.TokenInDecimals = 9
-				swapInfo.TokenOutMint = swapData.Mint
-				swapInfo.TokenOutAmount = swapData.TokenAmount
-				swapInfo.TokenOutDecimals = 9
-			case TradeTypeSell:
-				swapInfo.TokenInMint = swapData.Mint
-				swapInfo.TokenInAmount = swapData.TokenAmount
-				swapInfo.TokenInDecimals = 9
-				swapInfo.TokenOutMint = NATIVE_SOL_MINT_PROGRAM_ID
-				swapInfo.TokenOutAmount = swapData.CollateralAmount
-				swapInfo.TokenOutDecimals = 9
-			default:
-				return nil, fmt.Errorf("invalid trade type: %d", swapData.TradeType)
-			}
-			swapInfo.AMMs = append(swapInfo.AMMs, string(swapDatas[0].Type))
-			return swapInfo, nil
+	if len(pumpfunSwaps) > 0 {
+		event := pumpfunSwaps[0].Data.(*PumpfunTradeEvent)
+		if event.IsBuy {
+			swapInfo.TokenInMint = NATIVE_SOL_MINT_PROGRAM_ID
+			swapInfo.TokenInAmount = event.SolAmount
+			swapInfo.TokenInDecimals = 9
+			swapInfo.TokenOutMint = event.Mint
+			swapInfo.TokenOutAmount = event.TokenAmount
+			swapInfo.TokenOutDecimals = p.splDecimalsMap[event.Mint.String()]
+		} else {
+			swapInfo.TokenInMint = event.Mint
+			swapInfo.TokenInAmount = event.TokenAmount
+			swapInfo.TokenInDecimals = p.splDecimalsMap[event.Mint.String()]
+			swapInfo.TokenOutMint = NATIVE_SOL_MINT_PROGRAM_ID
+			swapInfo.TokenOutAmount = event.SolAmount
+			swapInfo.TokenOutDecimals = 9
 		}
+		swapInfo.AMMs = append(swapInfo.AMMs, string(pumpfunSwaps[0].Type))
+		swapInfo.Timestamp = time.Unix(int64(event.Timestamp), 0)
+		return swapInfo, nil
 	}
 
-	var uniqueTokens []TokenTransfer
-	seenTokens := make(map[string]bool)
+	if len(otherSwaps) > 0 {
+		var uniqueTokens []TokenTransfer
+		seenTokens := make(map[string]bool)
 
-	for _, swapData := range swapDatas {
-		transfer := getTransferFromSwapData(swapData)
-		if transfer != nil && !seenTokens[transfer.mint] {
-			uniqueTokens = append(uniqueTokens, *transfer)
-			seenTokens[transfer.mint] = true
-		}
-	}
-
-	if len(uniqueTokens) >= 2 {
-		inputTransfer := uniqueTokens[0]
-		outputTransfer := uniqueTokens[len(uniqueTokens)-1]
-
-		seenInputs := make(map[string]bool)
-		seenOutputs := make(map[string]bool)
-		var totalInputAmount uint64 = 0
-		var totalOutputAmount uint64 = 0
-
-		for _, swapData := range swapDatas {
+		for _, swapData := range otherSwaps {
 			transfer := getTransferFromSwapData(swapData)
-			if transfer == nil {
-				continue
-			}
-
-			amountStr := fmt.Sprintf("%d-%s", transfer.amount, transfer.mint)
-			if transfer.mint == inputTransfer.mint && !seenInputs[amountStr] {
-				totalInputAmount += transfer.amount
-				seenInputs[amountStr] = true
-				p.Log.Debugf("adding input token amount: %d", transfer.amount)
-			}
-			if transfer.mint == outputTransfer.mint && !seenOutputs[amountStr] {
-				totalOutputAmount += transfer.amount
-				seenOutputs[amountStr] = true
-				p.Log.Debugf("adding output token amount: %d", transfer.amount)
+			if transfer != nil && !seenTokens[transfer.mint] {
+				uniqueTokens = append(uniqueTokens, *transfer)
+				seenTokens[transfer.mint] = true
 			}
 		}
 
-		swapInfo.TokenInMint = solana.MustPublicKeyFromBase58(inputTransfer.mint)
-		swapInfo.TokenInAmount = totalInputAmount
-		swapInfo.TokenInDecimals = inputTransfer.decimals
-		swapInfo.TokenOutMint = solana.MustPublicKeyFromBase58(outputTransfer.mint)
-		swapInfo.TokenOutAmount = totalOutputAmount
-		swapInfo.TokenOutDecimals = outputTransfer.decimals
-	}
+		if len(uniqueTokens) >= 2 {
+			inputTransfer := uniqueTokens[0]
+			outputTransfer := uniqueTokens[len(uniqueTokens)-1]
 
-	seenAMMs := make(map[string]bool)
-	for _, swapData := range swapDatas {
-		if !seenAMMs[string(swapData.Type)] {
-			swapInfo.AMMs = append(swapInfo.AMMs, string(swapData.Type))
-			seenAMMs[string(swapData.Type)] = true
+			seenInputs := make(map[string]bool)
+			seenOutputs := make(map[string]bool)
+			var totalInputAmount uint64 = 0
+			var totalOutputAmount uint64 = 0
+
+			for _, swapData := range otherSwaps {
+				transfer := getTransferFromSwapData(swapData)
+				if transfer == nil {
+					continue
+				}
+
+				amountStr := fmt.Sprintf("%d-%s", transfer.amount, transfer.mint)
+				if transfer.mint == inputTransfer.mint && !seenInputs[amountStr] {
+					totalInputAmount += transfer.amount
+					seenInputs[amountStr] = true
+				}
+				if transfer.mint == outputTransfer.mint && !seenOutputs[amountStr] {
+					totalOutputAmount += transfer.amount
+					seenOutputs[amountStr] = true
+				}
+			}
+
+			swapInfo.TokenInMint = solana.MustPublicKeyFromBase58(inputTransfer.mint)
+			swapInfo.TokenInAmount = totalInputAmount
+			swapInfo.TokenInDecimals = inputTransfer.decimals
+			swapInfo.TokenOutMint = solana.MustPublicKeyFromBase58(outputTransfer.mint)
+			swapInfo.TokenOutAmount = totalOutputAmount
+			swapInfo.TokenOutDecimals = outputTransfer.decimals
+
+			seenAMMs := make(map[string]bool)
+			for _, swapData := range otherSwaps {
+				if !seenAMMs[string(swapData.Type)] {
+					swapInfo.AMMs = append(swapInfo.AMMs, string(swapData.Type))
+					seenAMMs[string(swapData.Type)] = true
+				}
+			}
+
+			swapInfo.Timestamp = time.Now()
+			return swapInfo, nil
 		}
 	}
 
-	swapInfo.Timestamp = time.Now()
-	return swapInfo, nil
+	return nil, fmt.Errorf("no valid swaps found")
 }
 
 func getTransferFromSwapData(swapData SwapData) *TokenTransfer {
