@@ -1,6 +1,6 @@
 module github.com/franco-bianco/solanaswap-go
 
-go 1.23.2
+go 1.22
 
 require (
 	github.com/gagliardetto/binary v0.8.0
