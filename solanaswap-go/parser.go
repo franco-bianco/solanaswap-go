@@ -117,6 +117,8 @@ func (p *Parser) ParseTransaction() ([]SwapData, error) {
 			parsedSwaps = append(parsedSwaps, p.processOrcaSwaps(i)...)
 		case progID.Equals(METEORA_PROGRAM_ID) || progID.Equals(METEORA_POOLS_PROGRAM_ID):
 			parsedSwaps = append(parsedSwaps, p.processMeteoraSwaps(i)...)
+		case progID.Equals(PUMPFUN_AMM_PROGRAM_ID):
+			parsedSwaps = append(parsedSwaps, p.processPumpfunAMMSwaps(i)...)
 		case progID.Equals(PUMP_FUN_PROGRAM_ID) ||
 			progID.Equals(solana.MustPublicKeyFromBase58("BSfD6SHZigAfDWSjzD5Q41jw8LmKwtmjskPH9XW1mrRW")):
 			parsedSwaps = append(parsedSwaps, p.processPumpfunSwaps(i)...)
@@ -189,25 +191,29 @@ func (p *Parser) ProcessSwapData(swapDatas []SwapData) (*SwapInfo, error) {
 	}
 
 	if len(pumpfunSwaps) > 0 {
-		event := pumpfunSwaps[0].Data.(*PumpfunTradeEvent)
-		if event.IsBuy {
-			swapInfo.TokenInMint = NATIVE_SOL_MINT_PROGRAM_ID
-			swapInfo.TokenInAmount = event.SolAmount
-			swapInfo.TokenInDecimals = 9
-			swapInfo.TokenOutMint = event.Mint
-			swapInfo.TokenOutAmount = event.TokenAmount
-			swapInfo.TokenOutDecimals = p.splDecimalsMap[event.Mint.String()]
-		} else {
-			swapInfo.TokenInMint = event.Mint
-			swapInfo.TokenInAmount = event.TokenAmount
-			swapInfo.TokenInDecimals = p.splDecimalsMap[event.Mint.String()]
-			swapInfo.TokenOutMint = NATIVE_SOL_MINT_PROGRAM_ID
-			swapInfo.TokenOutAmount = event.SolAmount
-			swapInfo.TokenOutDecimals = 9
+		switch data := pumpfunSwaps[0].Data.(type) {
+		case *PumpfunTradeEvent:
+			if data.IsBuy {
+				swapInfo.TokenInMint = NATIVE_SOL_MINT_PROGRAM_ID
+				swapInfo.TokenInAmount = data.SolAmount
+				swapInfo.TokenInDecimals = 9
+				swapInfo.TokenOutMint = data.Mint
+				swapInfo.TokenOutAmount = data.TokenAmount
+				swapInfo.TokenOutDecimals = p.splDecimalsMap[data.Mint.String()]
+			} else {
+				swapInfo.TokenInMint = data.Mint
+				swapInfo.TokenInAmount = data.TokenAmount
+				swapInfo.TokenInDecimals = p.splDecimalsMap[data.Mint.String()]
+				swapInfo.TokenOutMint = NATIVE_SOL_MINT_PROGRAM_ID
+				swapInfo.TokenOutAmount = data.SolAmount
+				swapInfo.TokenOutDecimals = 9
+			}
+			swapInfo.AMMs = append(swapInfo.AMMs, string(pumpfunSwaps[0].Type))
+			swapInfo.Timestamp = time.Unix(int64(data.Timestamp), 0)
+			return swapInfo, nil
+		default:
+			otherSwaps = append(otherSwaps, pumpfunSwaps...)
 		}
-		swapInfo.AMMs = append(swapInfo.AMMs, string(pumpfunSwaps[0].Type))
-		swapInfo.Timestamp = time.Unix(int64(event.Timestamp), 0)
-		return swapInfo, nil
 	}
 
 	if len(otherSwaps) > 0 {
@@ -327,6 +333,12 @@ func (p *Parser) processRouterSwaps(instructionIndex int) []SwapData {
 			processedProtocols[PROTOCOL_METEORA] = true
 			if meteoraSwaps := p.processMeteoraSwaps(instructionIndex); len(meteoraSwaps) > 0 {
 				swaps = append(swaps, meteoraSwaps...)
+			}
+
+		case progID.Equals(PUMPFUN_AMM_PROGRAM_ID) && !processedProtocols[PROTOCOL_PUMPFUN]:
+			processedProtocols[PROTOCOL_PUMPFUN] = true
+			if pumpfunAMMSwaps := p.processPumpfunAMMSwaps(instructionIndex); len(pumpfunAMMSwaps) > 0 {
+				swaps = append(swaps, pumpfunAMMSwaps...)
 			}
 
 		case (progID.Equals(PUMP_FUN_PROGRAM_ID) ||

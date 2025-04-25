@@ -7,7 +7,7 @@ Parses a Solana transaction and extracts the swap info, supports multiple AMMs. 
 - Extracts swap information from swap transactions
 - Parsing methods:
   - Pumpfun and Jupiter: parsing the event data
-  - Raydium, Orca, and Meteora: parsing Transfer and TransferChecked methods of the token program
+  - Raydium, Orca, Meteora, and PumpSwap: parsing Transfer and TransferChecked methods of the token program
   - Moonshot: parsing the instruction data of the Trade instruction
 
 ## Installation
@@ -119,10 +119,11 @@ The above code fetches a Solana transaction, parses its contents, and extracts s
   "TokenOutDecimals":
 ```
 
-### Notes
+### Recent Updates
 
-- Ensure you replace `txSig` with a valid Solana transaction signature.
-- The parser currently supports specific AMMs (e.g., Raydium, Orca, Pumpfun, etc.). Transactions involving unsupported programs may not be parsed correctly.
+- Added support for PumpSwap AMM transactions
+- Improved transaction type handling for different swap types
+- Fixed type conversion issues for various data formats
 
 ## Note
 
@@ -135,6 +136,7 @@ The above code fetches a Solana transaction, parses its contents, and extracts s
 - Raydium (V4, Route, CPMM, ConcentratedLiquidity)
 - Orca
 - Meteora (DLMM and Pools)
+- PumpSwap (PumpFun AMM Program)
 - MoonShot
 - Pumpfun
 - Jupiter
