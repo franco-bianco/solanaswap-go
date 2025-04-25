@@ -11,6 +11,7 @@ var (
 	OKX_SWAP_DISCRIMINATOR                 = [8]byte{248, 198, 158, 145, 225, 117, 135, 200}
 	OKX_SWAP2_DISCRIMINATOR                = [8]byte{65, 75, 63, 76, 235, 91, 91, 136}
 	OKX_COMMISSION_SPL_SWAP2_DISCRIMINATOR = [8]byte{173, 131, 78, 38, 150, 165, 123, 15}
+	OKX_SWAP3_DISCRIMINATOR                = [8]byte{19, 44, 130, 148, 72, 56, 44, 238}
 )
 
 func (p *Parser) processOKXSwaps(instructionIndex int) []SwapData {
@@ -38,8 +39,6 @@ func (p *Parser) processOKXSwaps(instructionIndex int) []SwapData {
 	discriminator := decodedBytes[:8]
 	p.Log.Infof("decoded okx swap instruction %d with discriminator: %x", instructionIndex, discriminator)
 
-	var swaps []SwapData
-
 	switch {
 	case bytes.Equal(discriminator, OKX_SWAP_DISCRIMINATOR[:]):
 		p.Log.Infof("processing okx swap type: okx_swap for instruction %d", instructionIndex)
@@ -47,19 +46,26 @@ func (p *Parser) processOKXSwaps(instructionIndex int) []SwapData {
 
 	case bytes.Equal(discriminator, OKX_SWAP2_DISCRIMINATOR[:]):
 		p.Log.Infof("processing okx swap type: okx_swap2 for instruction %d", instructionIndex)
-		swaps = append(swaps, p.processOKXRouterSwaps(instructionIndex)...)
+		return p.processOKXRouterSwaps(instructionIndex)
 
 	case bytes.Equal(discriminator, OKX_COMMISSION_SPL_SWAP2_DISCRIMINATOR[:]):
 		p.Log.Infof("processing okx swap type: okx_commission_spl_swap2 for instruction %d", instructionIndex)
-		swaps = append(swaps, p.processOKXRouterSwaps(instructionIndex)...)
+		return p.processOKXRouterSwaps(instructionIndex)
+
+	case bytes.Equal(discriminator, OKX_SWAP3_DISCRIMINATOR[:]):
+		p.Log.Infof("processing okx swap type: okx_swap3 for instruction %d", instructionIndex)
+		return p.processOKXRouterSwaps(instructionIndex)
 
 	default:
 		p.Log.Warnf("unknown okx swap discriminator %x for instruction %d", discriminator, instructionIndex)
+		swaps := p.processOKXRouterSwaps(instructionIndex)
+		if len(swaps) > 0 {
+			p.Log.Infof("successfully processed %d swaps with unknown discriminator", len(swaps))
+			return swaps
+		}
+		p.Log.Warnf("no swaps found with unknown discriminator %x", discriminator)
 		return nil
 	}
-
-	p.Log.Infof("returning %d swaps for instruction %d", len(swaps), instructionIndex)
-	return swaps
 }
 
 func (p *Parser) processOKXRouterSwaps(instructionIndex int) []SwapData {
@@ -85,12 +91,10 @@ func (p *Parser) processOKXRouterSwaps(instructionIndex int) []SwapData {
 			if processedProtocols[RAYDIUM] {
 				continue
 			}
-			p.Log.Debugf("instruction %d: processing raydium inner instruction", instructionIndex)
 			if raydSwaps := p.processRaydSwaps(instructionIndex); len(raydSwaps) > 0 {
 				for _, swap := range raydSwaps {
 					key := getSwapKey(swap)
 					if !seen[key] {
-						p.Log.Debugf("adding raydium swap: %s", key)
 						swaps = append(swaps, swap)
 						seen[key] = true
 					}
@@ -102,12 +106,10 @@ func (p *Parser) processOKXRouterSwaps(instructionIndex int) []SwapData {
 			if processedProtocols[ORCA] {
 				continue
 			}
-			p.Log.Debugf("instruction %d: processing orca inner instruction", instructionIndex)
 			if orcaSwaps := p.processOrcaSwaps(instructionIndex); len(orcaSwaps) > 0 {
 				for _, swap := range orcaSwaps {
 					key := getSwapKey(swap)
 					if !seen[key] {
-						p.Log.Debugf("adding orca swap: %s", key)
 						swaps = append(swaps, swap)
 						seen[key] = true
 					}
@@ -120,12 +122,10 @@ func (p *Parser) processOKXRouterSwaps(instructionIndex int) []SwapData {
 			if processedProtocols[METEORA] {
 				continue
 			}
-			p.Log.Debugf("instruction %d: processing meteora inner instruction", instructionIndex)
 			if meteoraSwaps := p.processMeteoraSwaps(instructionIndex); len(meteoraSwaps) > 0 {
 				for _, swap := range meteoraSwaps {
 					key := getSwapKey(swap)
 					if !seen[key] {
-						p.Log.Debugf("adding meteora swap: %s", key)
 						swaps = append(swaps, swap)
 						seen[key] = true
 					}
@@ -137,21 +137,16 @@ func (p *Parser) processOKXRouterSwaps(instructionIndex int) []SwapData {
 			if processedProtocols[PUMP_FUN] {
 				continue
 			}
-			p.Log.Debugf("instruction %d: processing pumpfun inner instruction", instructionIndex)
 			if pumpfunSwaps := p.processPumpfunSwaps(instructionIndex); len(pumpfunSwaps) > 0 {
 				for _, swap := range pumpfunSwaps {
 					key := getSwapKey(swap)
 					if !seen[key] {
-						p.Log.Debugf("adding pumpfun swap: %s", key)
 						swaps = append(swaps, swap)
 						seen[key] = true
 					}
 				}
 				processedProtocols[PUMP_FUN] = true
 			}
-
-		default:
-			p.Log.Debugf("instruction %d: skipping unknown inner instruction", instructionIndex)
 		}
 	}
 
@@ -159,7 +154,6 @@ func (p *Parser) processOKXRouterSwaps(instructionIndex int) []SwapData {
 	return swaps
 }
 
-// getSwapKey generates a unique key for a swap based on its type and amounts
 func getSwapKey(swap SwapData) string {
 	switch data := swap.Data.(type) {
 	case *TransferCheck:
