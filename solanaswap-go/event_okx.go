@@ -118,7 +118,8 @@ func (p *Parser) processOKXRouterSwaps(instructionIndex int) []SwapData {
 			}
 
 		case progID.Equals(METEORA_PROGRAM_ID) ||
-			progID.Equals(METEORA_POOLS_PROGRAM_ID):
+			progID.Equals(METEORA_POOLS_PROGRAM_ID) ||
+			progID.Equals(METEORA_DLMM_PROGRAM_ID):
 			if processedProtocols[METEORA] {
 				continue
 			}
