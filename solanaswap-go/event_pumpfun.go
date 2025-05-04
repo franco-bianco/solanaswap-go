@@ -94,3 +94,58 @@ func handlePumpfunTradeEvent(decoder *ag_binary.Decoder) (*PumpfunTradeEvent, er
 
 	return &trade, nil
 }
+
+// Helper function to determine if a PumpFun swap is a buy transaction (SOL -> Token)
+// Helper function to determine if a PumpFun swap is a buy transaction (SOL -> Token)
+func (p *Parser) isPumpFunAMMBuyTransaction(swaps []SwapData) bool {
+	if len(swaps) == 0 {
+		return false
+	}
+
+	// Get the signer's public key
+	signer := p.allAccountKeys[0].String()
+	p.Log.Infof("Signer address: %s", signer)
+
+	var tokenTransfer *TransferCheck
+
+	// Find the token transfer (non-SOL)
+	for _, swap := range swaps {
+		if tc, ok := swap.Data.(*TransferCheck); ok {
+			if tc.Info.Mint != NATIVE_SOL_MINT_PROGRAM_ID.String() {
+				tokenTransfer = tc
+				break
+			}
+		}
+	}
+
+	if tokenTransfer == nil {
+		return false
+	}
+
+	// Check if the signer's address matches the authority of token transfer
+	// For a buy, the user's authority should NOT match token transfer authority
+	// Log all relevant addresses
+	p.Log.Infof("Token transfer authority: %s", tokenTransfer.Info.Authority)
+	p.Log.Infof("Token destination: %s", tokenTransfer.Info.Destination)
+
+	// Check if the SOL transfers have the signer as authority
+	var signerIsSolAuthority bool
+	for _, swap := range swaps {
+		if tc, ok := swap.Data.(*TransferCheck); ok {
+			if tc.Info.Mint == NATIVE_SOL_MINT_PROGRAM_ID.String() {
+				p.Log.Infof("SOL transfer authority: %s", tc.Info.Authority)
+				if tc.Info.Authority == signer {
+					signerIsSolAuthority = true
+				}
+			}
+		}
+	}
+
+	// This is a buy if:
+	// 1. Signer is NOT the authority of the token transfer (token is received)
+	// 2. Signer IS the authority of SOL transfers (SOL is spent)
+	isBuy := tokenTransfer.Info.Authority != signer && signerIsSolAuthority
+	p.Log.Infof("Transaction detected as buy: %v", isBuy)
+
+	return isBuy
+}

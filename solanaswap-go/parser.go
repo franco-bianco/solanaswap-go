@@ -191,28 +191,75 @@ func (p *Parser) ProcessSwapData(swapDatas []SwapData) (*SwapInfo, error) {
 	}
 
 	if len(pumpfunSwaps) > 0 {
-		switch data := pumpfunSwaps[0].Data.(type) {
-		case *PumpfunTradeEvent:
-			if data.IsBuy {
+		// Check if it's a PumpfunTradeEvent
+		if tradeEvent, ok := pumpfunSwaps[0].Data.(*PumpfunTradeEvent); ok {
+			if tradeEvent.IsBuy {
 				swapInfo.TokenInMint = NATIVE_SOL_MINT_PROGRAM_ID
-				swapInfo.TokenInAmount = data.SolAmount
+				swapInfo.TokenInAmount = tradeEvent.SolAmount
 				swapInfo.TokenInDecimals = 9
-				swapInfo.TokenOutMint = data.Mint
-				swapInfo.TokenOutAmount = data.TokenAmount
-				swapInfo.TokenOutDecimals = p.splDecimalsMap[data.Mint.String()]
+				swapInfo.TokenOutMint = tradeEvent.Mint
+				swapInfo.TokenOutAmount = tradeEvent.TokenAmount
+				swapInfo.TokenOutDecimals = p.splDecimalsMap[tradeEvent.Mint.String()]
 			} else {
-				swapInfo.TokenInMint = data.Mint
-				swapInfo.TokenInAmount = data.TokenAmount
-				swapInfo.TokenInDecimals = p.splDecimalsMap[data.Mint.String()]
+				swapInfo.TokenInMint = tradeEvent.Mint
+				swapInfo.TokenInAmount = tradeEvent.TokenAmount
+				swapInfo.TokenInDecimals = p.splDecimalsMap[tradeEvent.Mint.String()]
 				swapInfo.TokenOutMint = NATIVE_SOL_MINT_PROGRAM_ID
-				swapInfo.TokenOutAmount = data.SolAmount
+				swapInfo.TokenOutAmount = tradeEvent.SolAmount
 				swapInfo.TokenOutDecimals = 9
 			}
 			swapInfo.AMMs = append(swapInfo.AMMs, string(pumpfunSwaps[0].Type))
-			swapInfo.Timestamp = time.Unix(int64(data.Timestamp), 0)
+			swapInfo.Timestamp = time.Unix(int64(tradeEvent.Timestamp), 0)
 			return swapInfo, nil
-		default:
-			otherSwaps = append(otherSwaps, pumpfunSwaps...)
+		} else {
+			// Detailed logging for investigation
+			p.Log.Infof("Processing PumpFun AMM swaps, count: %d", len(pumpfunSwaps))
+
+			// Check if it's a buy transaction
+			isBuy := p.isPumpFunAMMBuyTransaction(pumpfunSwaps)
+
+			if isBuy {
+				p.Log.Infof("Detected PumpFun BUY transaction")
+
+				var tokenTransfer *TokenTransfer
+				var totalSolAmount uint64
+
+				for _, swap := range pumpfunSwaps {
+					transfer := getTransferFromSwapData(swap)
+					if transfer == nil {
+						continue
+					}
+
+					if transfer.mint == NATIVE_SOL_MINT_PROGRAM_ID.String() {
+						totalSolAmount += transfer.amount
+						p.Log.Infof("Added SOL amount: %d, total now: %d",
+							transfer.amount, totalSolAmount)
+					} else {
+						tokenTransfer = transfer
+						p.Log.Infof("Found token transfer: %s, amount: %d",
+							tokenTransfer.mint, tokenTransfer.amount)
+					}
+				}
+
+				if tokenTransfer != nil {
+					// It's a buy: SOL -> Token
+					swapInfo.TokenInMint = NATIVE_SOL_MINT_PROGRAM_ID
+					swapInfo.TokenInAmount = totalSolAmount
+					swapInfo.TokenInDecimals = 9
+					swapInfo.TokenOutMint = solana.MustPublicKeyFromBase58(tokenTransfer.mint)
+					swapInfo.TokenOutAmount = tokenTransfer.amount
+					swapInfo.TokenOutDecimals = tokenTransfer.decimals
+					swapInfo.AMMs = append(swapInfo.AMMs, string(PUMP_FUN))
+					swapInfo.Timestamp = time.Now()
+
+					p.Log.Infof("Generated swap info for BUY transaction: %+v", swapInfo)
+					return swapInfo, nil
+				}
+			} else {
+				// It's a sell or not identifiable as a buy - process normally
+				p.Log.Infof("Processing as a SELL or normal transaction")
+				otherSwaps = append(otherSwaps, pumpfunSwaps...)
+			}
 		}
 	}
 

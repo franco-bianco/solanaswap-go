@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
+	"time"
 
 	solanaswapgo "github.com/franco-bianco/solanaswap-go/solanaswap-go"
 	"github.com/gagliardetto/solana-go"
@@ -34,9 +36,24 @@ Example Transactions:
 - OKX: 5xaT2SXQUyvyLGsnyyoKMwsDoHrx1enCKofkdRMdNaL5MW26gjQBM3AWebwjTJ49uqEqnFu5d9nXJek6gUSGCqbL
 */
 
+type Trade struct {
+	ID              uint   `gorm:"primarykey" json:"id"`
+	TxID            string `json:"tx_id" gorm:"unique;size:88"`
+	Type            string `json:"type" gorm:"size:4"`
+	DexProvider     string `json:"dex_provider" gorm:"size:20"`
+	Timestamp       int64  `json:"timestamp"`
+	WalletAddress   string `json:"wallet_address" gorm:"size:44"`
+	TokenInAddress  string `json:"token_in_address" gorm:"size:44"`
+	TokenOutAddress string `json:"token_out_address" gorm:"size:44"`
+	TokenInAmount   uint64 `json:"token_in_amount" gorm:"size:50"`
+	TokenOutAmount  uint64 `json:"token_out_amount" gorm:"size:50"`
+}
+
 func main() {
 	rpcClient := rpc.New(rpc.MainNetBeta.RPC)
-	txSig := solana.MustSignatureFromBase58("5PC8qXvzyeqjiTuYkNKyKRShutvVUt7hXySvg6Ux98oa9xuGT6DpTaYoEJKaq5b3tL4XFtJMxZW8SreujL2YkyPg")
+
+	txSig := solana.MustSignatureFromBase58("jhz8dHkk2Y5nZpNiMSKBwLah5Bkuxv5Fi6vxsooCEqHBCfpsS7RzWbMvB7KG6PvZ2L7MTBnzNcZrg42QEHiVcR2") // buy pumpswap
+	// txSig := solana.MustSignatureFromBase58("3JKnwtnmb7hJswPd3WjqmoBrDwRce5dvSN2jCjtX1J4KPdaPZdBgjvfrbTcPQutYuFqTDKacyNTUe6L1hThYdYjM") // buy pumpswap
 
 	var maxTxVersion uint64 = 0
 	tx, err := rpcClient.GetTransaction(
@@ -71,4 +88,28 @@ func main() {
 
 	marshalledSwapData, _ := json.MarshalIndent(swapInfo, "", "  ")
 	fmt.Println(string(marshalledSwapData))
+
+	WSOL := "So11111111111111111111111111111111111111112"
+	USDC := "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+	USDT := "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+
+	tradeType := "buy"
+	if swapInfo.TokenOutMint.String() == WSOL || swapInfo.TokenOutMint.String() == USDC || swapInfo.TokenOutMint.String() == USDT {
+		tradeType = "sell"
+	}
+
+	transactionInfo := Trade{
+		Type:            tradeType,
+		DexProvider:     strings.ToLower(swapInfo.AMMs[0]),
+		Timestamp:       time.Now().Unix(),
+		WalletAddress:   swapInfo.Signers[0].String(),
+		TokenInAddress:  swapInfo.TokenInMint.String(),
+		TokenOutAddress: swapInfo.TokenOutMint.String(),
+		TokenInAmount:   swapInfo.TokenInAmount,
+		TokenOutAmount:  swapInfo.TokenOutAmount,
+		TxID:            txSig.String(),
+	}
+
+	transactionInfoJson, _ := json.MarshalIndent(transactionInfo, "", "\t")
+	fmt.Println(string(transactionInfoJson))
 }
