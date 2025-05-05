@@ -264,50 +264,31 @@ func (p *Parser) ProcessSwapData(swapDatas []SwapData) (*SwapInfo, error) {
 	}
 
 	if len(otherSwaps) > 0 {
-		var uniqueTokens []TokenTransfer
-		seenTokens := make(map[string]bool)
+		// Track the chronological order of transfers
+		var allTransfers []TokenTransfer
 
 		for _, swapData := range otherSwaps {
 			transfer := getTransferFromSwapData(swapData)
-			if transfer != nil && !seenTokens[transfer.mint] {
-				uniqueTokens = append(uniqueTokens, *transfer)
-				seenTokens[transfer.mint] = true
+			if transfer != nil {
+				allTransfers = append(allTransfers, *transfer)
 			}
 		}
 
-		if len(uniqueTokens) >= 2 {
-			inputTransfer := uniqueTokens[0]
-			outputTransfer := uniqueTokens[len(uniqueTokens)-1]
+		// If we have at least a starting and ending transfer
+		if len(allTransfers) >= 2 {
+			// Use first transfer as input and last as output for a multi-hop swap
+			inputTransfer := allTransfers[0]
+			outputTransfer := allTransfers[len(allTransfers)-1]
 
-			seenInputs := make(map[string]bool)
-			seenOutputs := make(map[string]bool)
-			var totalInputAmount uint64 = 0
-			var totalOutputAmount uint64 = 0
-
-			for _, swapData := range otherSwaps {
-				transfer := getTransferFromSwapData(swapData)
-				if transfer == nil {
-					continue
-				}
-
-				amountStr := fmt.Sprintf("%d-%s", transfer.amount, transfer.mint)
-				if transfer.mint == inputTransfer.mint && !seenInputs[amountStr] {
-					totalInputAmount += transfer.amount
-					seenInputs[amountStr] = true
-				}
-				if transfer.mint == outputTransfer.mint && !seenOutputs[amountStr] {
-					totalOutputAmount += transfer.amount
-					seenOutputs[amountStr] = true
-				}
-			}
-
+			// For multi-hop routes like RAY -> OXY -> WSOL, we want RAY as input and WSOL as output
 			swapInfo.TokenInMint = solana.MustPublicKeyFromBase58(inputTransfer.mint)
-			swapInfo.TokenInAmount = totalInputAmount
+			swapInfo.TokenInAmount = inputTransfer.amount
 			swapInfo.TokenInDecimals = inputTransfer.decimals
 			swapInfo.TokenOutMint = solana.MustPublicKeyFromBase58(outputTransfer.mint)
-			swapInfo.TokenOutAmount = totalOutputAmount
+			swapInfo.TokenOutAmount = outputTransfer.amount
 			swapInfo.TokenOutDecimals = outputTransfer.decimals
 
+			// Collect unique AMMs used in this swap
 			seenAMMs := make(map[string]bool)
 			for _, swapData := range otherSwaps {
 				if !seenAMMs[string(swapData.Type)] {
