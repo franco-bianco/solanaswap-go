@@ -15,6 +15,7 @@ import (
 Example Transactions:
 - Orca: 2kAW5GAhPZjM3NoSrhJVHdEpwjmq9neWtckWnjopCfsmCGB27e3v2ZyMM79FdsL4VWGEtYSFi1sF1Zhs7bqdoaVT
 - Pumpfun: 4Cod1cNGv6RboJ7rSB79yeVCR4Lfd25rFgLY3eiPJfTJjTGyYP1r2i1upAYZHQsWDqUbGd1bhTRm1bpSQcpWMnEz
+- Pumpfun AMM (Pumpswap): 23QJ6qbKcwzA76TX2uSaEb3EtBorKYty9phGYUueMyGoazopvyyZfPfGmGgGzmdt5CPW9nEuB72nnBfaGnydUa6D
 - Banana Gun: oXUd22GQ1d45a6XNzfdpHAX6NfFEfFa9o2Awn2oimY89Rms3PmXL1uBJx3CnTYjULJw6uim174b3PLBFkaAxKzK
 - Jupiter: DBctXdTTtvn7Rr4ikeJFCBz4AtHmJRyjHGQFpE59LuY3Shb7UcRJThAXC7TGRXXskXuu9LEm9RqtU6mWxe5cjPF
 - Jupiter DCA: 4mxr44yo5Qi7Rabwbknkh8MNUEWAMKmzFQEmqUVdx5JpHEEuh59TrqiMCjZ7mgZMozRK1zW8me34w8Myi8Qi1tWP
@@ -26,14 +27,16 @@ Example Transactions:
 - Rayd Concentrated Liquidity Swap: 4MSVpVBwxnYTQSF3bSrAB99a3pVr6P6bgoCRDsrBbDMA77WeQqoBDDDXqEh8WpnUy5U4GeotdCG9xyExjNTjYE1u
 - Maestro: mWaH4FELcPj4zeY4Cgk5gxUirQDM7yE54VgMEVaqiUDQjStyzwNrxLx4FMEaKEHQoYsgCRhc1YdmBvhGDRVgRrq
 - Meteora Pools Program: 4uuw76SPksFw6PvxLFkG9jRyReV1F4EyPYNc3DdSECip8tM22ewqGWJUaRZ1SJEZpuLJz1qPTEPb2es8Zuegng9Z
+- Meteora DLMM: 5PC8qXvzyeqjiTuYkNKyKRShutvVUt7hXySvg6Ux98oa9xuGT6DpTaYoEJKaq5b3tL4XFtJMxZW8SreujL2YkyPg
 - Moonshot: AhiFQX1Z3VYbkKQH64ryPDRwxUv8oEPzQVjSvT7zY58UYDm4Yvkkt2Ee9VtSXtF6fJz8fXmb5j3xYVDF17Gr9CG (Buy)
 - Moonshot: 2XYu86VrUXiwNNj8WvngcXGytrCsSrpay69Rt3XBz9YZvCQcZJLjvDfh9UWETFtFW47vi4xG2CkiarRJwSe6VekE (Sell)
 - Multiple AMMs: 46Jp5EEUrmdCVcE3jeewqUmsMHhqiWWtj243UZNDFZ3mmma6h2DF4AkgPE9ToRYVLVrfKQCJphrvxbNk68Lub9vw //! not supported yet
+- OKX: 5xaT2SXQUyvyLGsnyyoKMwsDoHrx1enCKofkdRMdNaL5MW26gjQBM3AWebwjTJ49uqEqnFu5d9nXJek6gUSGCqbL
 */
 
 func main() {
 	rpcClient := rpc.New(rpc.MainNetBeta.RPC)
-	txSig := solana.MustSignatureFromBase58("mWaH4FELcPj4zeY4Cgk5gxUirQDM7yE54VgMEVaqiUDQjStyzwNrxLx4FMEaKEHQoYsgCRhc1YdmBvhGDRVgRrq")
+	txSig := solana.MustSignatureFromBase58("5PC8qXvzyeqjiTuYkNKyKRShutvVUt7hXySvg6Ux98oa9xuGT6DpTaYoEJKaq5b3tL4XFtJMxZW8SreujL2YkyPg")
 
 	var maxTxVersion uint64 = 0
 	tx, err := rpcClient.GetTransaction(
@@ -50,7 +53,7 @@ func main() {
 
 	parser, err := solanaswapgo.NewTransactionParser(tx)
 	if err != nil {
-		log.Fatalf("error creating orca parser: %s", err)
+		log.Fatalf("error creating parser: %s", err)
 	}
 
 	transactionData, err := parser.ParseTransaction()
@@ -61,12 +64,11 @@ func main() {
 	marshalledData, _ := json.MarshalIndent(transactionData, "", "  ")
 	fmt.Println(string(marshalledData))
 
-	swapData, err := parser.ProcessSwapData(transactionData)
+	swapInfo, err := parser.ProcessSwapData(transactionData)
 	if err != nil {
 		log.Fatalf("error processing swap data: %s", err)
 	}
 
-	marshalledSwapData, _ := json.MarshalIndent(swapData, "", "  ")
+	marshalledSwapData, _ := json.MarshalIndent(swapInfo, "", "  ")
 	fmt.Println(string(marshalledSwapData))
-
 }

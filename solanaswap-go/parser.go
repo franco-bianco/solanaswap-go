@@ -10,24 +10,40 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	PROTOCOL_RAYDIUM = "raydium"
+	PROTOCOL_ORCA    = "orca"
+	PROTOCOL_METEORA = "meteora"
+	PROTOCOL_PUMPFUN = "pumpfun"
+)
+
+type TokenTransfer struct {
+	mint     string
+	amount   uint64
+	decimals uint8
+}
+
 type Parser struct {
-	tx              *rpc.GetTransactionResult
+	txMeta          *rpc.TransactionMeta
 	txInfo          *solana.Transaction
 	allAccountKeys  solana.PublicKeySlice
-	splTokenInfoMap map[string]TokenInfo // map[authority]TokenInfo
-	splDecimalsMap  map[string]uint8     // map[mint]decimals
+	splTokenInfoMap map[string]TokenInfo
+	splDecimalsMap  map[string]uint8
 	Log             *logrus.Logger
 }
 
 func NewTransactionParser(tx *rpc.GetTransactionResult) (*Parser, error) {
-
 	txInfo, err := tx.Transaction.GetTransaction()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transaction: %w", err)
 	}
 
-	allAccountKeys := append(txInfo.Message.AccountKeys, tx.Meta.LoadedAddresses.Writable...)
-	allAccountKeys = append(allAccountKeys, tx.Meta.LoadedAddresses.ReadOnly...)
+	return NewTransactionParserFromTransaction(txInfo, tx.Meta)
+}
+
+func NewTransactionParserFromTransaction(tx *solana.Transaction, txMeta *rpc.TransactionMeta) (*Parser, error) {
+	allAccountKeys := append(tx.Message.AccountKeys, txMeta.LoadedAddresses.Writable...)
+	allAccountKeys = append(allAccountKeys, txMeta.LoadedAddresses.ReadOnly...)
 
 	log := logrus.New()
 	log.SetFormatter(&logrus.TextFormatter{
@@ -36,8 +52,8 @@ func NewTransactionParser(tx *rpc.GetTransactionResult) (*Parser, error) {
 	})
 
 	parser := &Parser{
-		tx:             tx,
-		txInfo:         txInfo,
+		txMeta:         txMeta,
+		txInfo:         tx,
 		allAccountKeys: allAccountKeys,
 		Log:            log,
 	}
@@ -74,11 +90,14 @@ func (p *Parser) ParseTransaction() ([]SwapData, error) {
 		case progID.Equals(BANANA_GUN_PROGRAM_ID) ||
 			progID.Equals(MINTECH_PROGRAM_ID) ||
 			progID.Equals(BLOOM_PROGRAM_ID) ||
+			progID.Equals(NOVA_PROGRAM_ID) ||
 			progID.Equals(MAESTRO_PROGRAM_ID):
-			// Check inner instructions to determine which swap protocol is being used
-			if innerSwaps := p.processTradingBotSwaps(i); len(innerSwaps) > 0 {
+			if innerSwaps := p.processRouterSwaps(i); len(innerSwaps) > 0 {
 				parsedSwaps = append(parsedSwaps, innerSwaps...)
 			}
+		case progID.Equals(OKX_DEX_ROUTER_PROGRAM_ID):
+			skip = true
+			parsedSwaps = append(parsedSwaps, p.processOKXSwaps(i)...)
 		}
 	}
 	if skip {
@@ -96,10 +115,12 @@ func (p *Parser) ParseTransaction() ([]SwapData, error) {
 			parsedSwaps = append(parsedSwaps, p.processRaydSwaps(i)...)
 		case progID.Equals(ORCA_PROGRAM_ID):
 			parsedSwaps = append(parsedSwaps, p.processOrcaSwaps(i)...)
-		case progID.Equals(METEORA_PROGRAM_ID) || progID.Equals(METEORA_POOLS_PROGRAM_ID):
+		case progID.Equals(METEORA_PROGRAM_ID) || progID.Equals(METEORA_POOLS_PROGRAM_ID) || progID.Equals(METEORA_DLMM_PROGRAM_ID):
 			parsedSwaps = append(parsedSwaps, p.processMeteoraSwaps(i)...)
+		case progID.Equals(PUMPFUN_AMM_PROGRAM_ID):
+			parsedSwaps = append(parsedSwaps, p.processPumpfunAMMSwaps(i)...)
 		case progID.Equals(PUMP_FUN_PROGRAM_ID) ||
-			progID.Equals(solana.MustPublicKeyFromBase58("BSfD6SHZigAfDWSjzD5Q41jw8LmKwtmjskPH9XW1mrRW")): // PumpFun
+			progID.Equals(solana.MustPublicKeyFromBase58("BSfD6SHZigAfDWSjzD5Q41jw8LmKwtmjskPH9XW1mrRW")):
 			parsedSwaps = append(parsedSwaps, p.processPumpfunSwaps(i)...)
 		}
 	}
@@ -123,147 +144,171 @@ type SwapInfo struct {
 }
 
 func (p *Parser) ProcessSwapData(swapDatas []SwapData) (*SwapInfo, error) {
-
-	txInfo, err := p.tx.Transaction.GetTransaction()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get transaction: %w", err)
+	if len(swapDatas) == 0 {
+		return nil, fmt.Errorf("no swap data provided")
 	}
 
 	swapInfo := &SwapInfo{
-		Signers:    txInfo.Message.Signers(),
-		Signatures: txInfo.Signatures,
-		// TODO: add timestamp (get from block)
+		Signatures: p.txInfo.Signatures,
 	}
 
-	for i, swapData := range swapDatas {
+	if p.containsDCAProgram() {
+		swapInfo.Signers = []solana.PublicKey{p.allAccountKeys[2]}
+	} else {
+		swapInfo.Signers = []solana.PublicKey{p.allAccountKeys[0]}
+	}
+
+	jupiterSwaps := make([]SwapData, 0)
+	pumpfunSwaps := make([]SwapData, 0)
+	otherSwaps := make([]SwapData, 0)
+
+	for _, swapData := range swapDatas {
 		switch swapData.Type {
 		case JUPITER:
-			intermediateInfo, err := parseJupiterEvents(swapDatas)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse Jupiter events: %w", err)
-			}
-			jupiterSwapInfo, err := p.convertToSwapInfo(intermediateInfo)
-			if err != nil {
-				return nil, fmt.Errorf("failed to convert to swap info: %w", err)
-			}
-			jupiterSwapInfo.Signatures = swapInfo.Signatures
-			return jupiterSwapInfo, nil
+			jupiterSwaps = append(jupiterSwaps, swapData)
 		case PUMP_FUN:
-			if swapData.Data.(*PumpfunTradeEvent).IsBuy {
-				swapInfo.TokenInMint = NATIVE_SOL_MINT_PROGRAM_ID // TokenIn info is always SOL for Pumpfun
-				swapInfo.TokenInAmount = swapData.Data.(*PumpfunTradeEvent).SolAmount
-				swapInfo.TokenInDecimals = 9
-				swapInfo.TokenOutMint = swapData.Data.(*PumpfunTradeEvent).Mint
-				swapInfo.TokenOutAmount = swapData.Data.(*PumpfunTradeEvent).TokenAmount
-				swapInfo.TokenOutDecimals = p.splDecimalsMap[swapInfo.TokenOutMint.String()]
-			} else {
-				swapInfo.TokenInMint = swapData.Data.(*PumpfunTradeEvent).Mint
-				swapInfo.TokenInAmount = swapData.Data.(*PumpfunTradeEvent).TokenAmount
-				swapInfo.TokenInDecimals = p.splDecimalsMap[swapInfo.TokenInMint.String()]
-				swapInfo.TokenOutMint = NATIVE_SOL_MINT_PROGRAM_ID // TokenOut info is always SOL for Pumpfun
-				swapInfo.TokenOutAmount = swapData.Data.(*PumpfunTradeEvent).SolAmount
-				swapInfo.TokenOutDecimals = 9
-			}
-			swapInfo.AMMs = append(swapInfo.AMMs, string(swapData.Type))
-			swapInfo.Timestamp = time.Unix(int64(swapData.Data.(*PumpfunTradeEvent).Timestamp), 0)
-			return swapInfo, nil // Pumpfun only has one swap event
-		case METEORA:
-			switch swapData.Data.(type) {
-			case *TransferCheck:
-				swapData := swapData.Data.(*TransferCheck)
-				if i == 0 {
-					tokenInAmount, _ := strconv.ParseInt(swapData.Info.TokenAmount.Amount, 10, 64)
-					swapInfo.TokenInMint = solana.MustPublicKeyFromBase58(swapData.Info.Mint)
-					swapInfo.TokenInAmount = uint64(tokenInAmount)
-					swapInfo.TokenInDecimals = swapData.Info.TokenAmount.Decimals
-				} else {
-					tokenOutAmount, _ := strconv.ParseFloat(swapData.Info.TokenAmount.Amount, 64)
-					swapInfo.TokenOutMint = solana.MustPublicKeyFromBase58(swapData.Info.Mint)
-					swapInfo.TokenOutAmount = uint64(tokenOutAmount)
-					swapInfo.TokenOutDecimals = swapData.Info.TokenAmount.Decimals
-				}
-			case *TransferData: // Meteora Pools
-				swapData := swapData.Data.(*TransferData)
-				if i == 0 {
-					swapInfo.TokenInMint = solana.MustPublicKeyFromBase58(swapData.Mint)
-					swapInfo.TokenInAmount = swapData.Info.Amount
-					swapInfo.TokenInDecimals = swapData.Decimals
-				} else {
-					if swapData.Info.Authority == swapInfo.Signers[0].String() && swapData.Mint == swapInfo.TokenInMint.String() {
-						swapInfo.TokenInAmount += swapData.Info.Amount
-					}
-					swapInfo.TokenOutMint = solana.MustPublicKeyFromBase58(swapData.Mint)
-					swapInfo.TokenOutAmount = swapData.Info.Amount
-					swapInfo.TokenOutDecimals = swapData.Decimals
-				}
-			}
-		case RAYDIUM, ORCA:
-			switch swapData.Data.(type) {
-			case *TransferData: // Raydium V4 and Orca
-				swapData := swapData.Data.(*TransferData)
-				if i == 0 {
-					swapInfo.TokenInMint = solana.MustPublicKeyFromBase58(swapData.Mint)
-					swapInfo.TokenInAmount = swapData.Info.Amount
-					swapInfo.TokenInDecimals = swapData.Decimals
-				} else {
-					swapInfo.TokenOutMint = solana.MustPublicKeyFromBase58(swapData.Mint)
-					swapInfo.TokenOutAmount = swapData.Info.Amount
-					swapInfo.TokenOutDecimals = swapData.Decimals
-				}
-			case *TransferCheck: // Raydium CPMM
-				swapData := swapData.Data.(*TransferCheck)
-				if i == 0 {
-					tokenInAmount, _ := strconv.ParseInt(swapData.Info.TokenAmount.Amount, 10, 64)
-					swapInfo.TokenInMint = solana.MustPublicKeyFromBase58(swapData.Info.Mint)
-					swapInfo.TokenInAmount = uint64(tokenInAmount)
-					swapInfo.TokenInDecimals = swapData.Info.TokenAmount.Decimals
-				} else {
-					tokenOutAmount, _ := strconv.ParseFloat(swapData.Info.TokenAmount.Amount, 64)
-					swapInfo.TokenOutMint = solana.MustPublicKeyFromBase58(swapData.Info.Mint)
-					swapInfo.TokenOutAmount = uint64(tokenOutAmount)
-					swapInfo.TokenOutDecimals = swapData.Info.TokenAmount.Decimals
-				}
-			}
-		case MOONSHOT:
-			swapData := swapData.Data.(*MoonshotTradeInstructionWithMint)
-			switch swapData.TradeType {
-			case TradeTypeBuy: // BUY
-				swapInfo.TokenInMint = NATIVE_SOL_MINT_PROGRAM_ID
-				swapInfo.TokenInAmount = swapData.CollateralAmount
-				swapInfo.TokenInDecimals = 9
-				swapInfo.TokenOutMint = swapData.Mint
-				swapInfo.TokenOutAmount = swapData.TokenAmount
-				swapInfo.TokenOutDecimals = 9
-			case TradeTypeSell: // SELL
-				swapInfo.TokenInMint = swapData.Mint
-				swapInfo.TokenInAmount = swapData.TokenAmount
-				swapInfo.TokenInDecimals = 9
-				swapInfo.TokenOutMint = NATIVE_SOL_MINT_PROGRAM_ID
-				swapInfo.TokenOutAmount = swapData.CollateralAmount
-				swapInfo.TokenOutDecimals = 9
-			default:
-				return nil, fmt.Errorf("invalid trade type: %d", swapData.TradeType)
-			}
+			pumpfunSwaps = append(pumpfunSwaps, swapData)
+		default:
+			otherSwaps = append(otherSwaps, swapData)
 		}
-		swapInfo.AMMs = append(swapInfo.AMMs, string(swapData.Type))
 	}
 
-	return swapInfo, nil
+	if len(jupiterSwaps) > 0 {
+		jupiterInfo, err := parseJupiterEvents(jupiterSwaps)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse Jupiter events: %w", err)
+		}
+
+		swapInfo.TokenInMint = jupiterInfo.TokenInMint
+		swapInfo.TokenInAmount = jupiterInfo.TokenInAmount
+		swapInfo.TokenInDecimals = jupiterInfo.TokenInDecimals
+		swapInfo.TokenOutMint = jupiterInfo.TokenOutMint
+		swapInfo.TokenOutAmount = jupiterInfo.TokenOutAmount
+		swapInfo.TokenOutDecimals = jupiterInfo.TokenOutDecimals
+		swapInfo.AMMs = jupiterInfo.AMMs
+
+		return swapInfo, nil
+	}
+
+	if len(pumpfunSwaps) > 0 {
+		switch data := pumpfunSwaps[0].Data.(type) {
+		case *PumpfunTradeEvent:
+			if data.IsBuy {
+				swapInfo.TokenInMint = NATIVE_SOL_MINT_PROGRAM_ID
+				swapInfo.TokenInAmount = data.SolAmount
+				swapInfo.TokenInDecimals = 9
+				swapInfo.TokenOutMint = data.Mint
+				swapInfo.TokenOutAmount = data.TokenAmount
+				swapInfo.TokenOutDecimals = p.splDecimalsMap[data.Mint.String()]
+			} else {
+				swapInfo.TokenInMint = data.Mint
+				swapInfo.TokenInAmount = data.TokenAmount
+				swapInfo.TokenInDecimals = p.splDecimalsMap[data.Mint.String()]
+				swapInfo.TokenOutMint = NATIVE_SOL_MINT_PROGRAM_ID
+				swapInfo.TokenOutAmount = data.SolAmount
+				swapInfo.TokenOutDecimals = 9
+			}
+			swapInfo.AMMs = append(swapInfo.AMMs, string(pumpfunSwaps[0].Type))
+			swapInfo.Timestamp = time.Unix(int64(data.Timestamp), 0)
+			return swapInfo, nil
+		default:
+			otherSwaps = append(otherSwaps, pumpfunSwaps...)
+		}
+	}
+
+	if len(otherSwaps) > 0 {
+		var uniqueTokens []TokenTransfer
+		seenTokens := make(map[string]bool)
+
+		for _, swapData := range otherSwaps {
+			transfer := getTransferFromSwapData(swapData)
+			if transfer != nil && !seenTokens[transfer.mint] {
+				uniqueTokens = append(uniqueTokens, *transfer)
+				seenTokens[transfer.mint] = true
+			}
+		}
+
+		if len(uniqueTokens) >= 2 {
+			inputTransfer := uniqueTokens[0]
+			outputTransfer := uniqueTokens[len(uniqueTokens)-1]
+
+			seenInputs := make(map[string]bool)
+			seenOutputs := make(map[string]bool)
+			var totalInputAmount uint64 = 0
+			var totalOutputAmount uint64 = 0
+
+			for _, swapData := range otherSwaps {
+				transfer := getTransferFromSwapData(swapData)
+				if transfer == nil {
+					continue
+				}
+
+				amountStr := fmt.Sprintf("%d-%s", transfer.amount, transfer.mint)
+				if transfer.mint == inputTransfer.mint && !seenInputs[amountStr] {
+					totalInputAmount += transfer.amount
+					seenInputs[amountStr] = true
+				}
+				if transfer.mint == outputTransfer.mint && !seenOutputs[amountStr] {
+					totalOutputAmount += transfer.amount
+					seenOutputs[amountStr] = true
+				}
+			}
+
+			swapInfo.TokenInMint = solana.MustPublicKeyFromBase58(inputTransfer.mint)
+			swapInfo.TokenInAmount = totalInputAmount
+			swapInfo.TokenInDecimals = inputTransfer.decimals
+			swapInfo.TokenOutMint = solana.MustPublicKeyFromBase58(outputTransfer.mint)
+			swapInfo.TokenOutAmount = totalOutputAmount
+			swapInfo.TokenOutDecimals = outputTransfer.decimals
+
+			seenAMMs := make(map[string]bool)
+			for _, swapData := range otherSwaps {
+				if !seenAMMs[string(swapData.Type)] {
+					swapInfo.AMMs = append(swapInfo.AMMs, string(swapData.Type))
+					seenAMMs[string(swapData.Type)] = true
+				}
+			}
+
+			swapInfo.Timestamp = time.Now()
+			return swapInfo, nil
+		}
+	}
+
+	return nil, fmt.Errorf("no valid swaps found")
 }
 
-func (p *Parser) processTradingBotSwaps(instructionIndex int) []SwapData {
+func getTransferFromSwapData(swapData SwapData) *TokenTransfer {
+	switch data := swapData.Data.(type) {
+	case *TransferData:
+		return &TokenTransfer{
+			mint:     data.Mint,
+			amount:   data.Info.Amount,
+			decimals: data.Decimals,
+		}
+	case *TransferCheck:
+		amt, err := strconv.ParseUint(data.Info.TokenAmount.Amount, 10, 64)
+		if err != nil {
+			return nil
+		}
+		return &TokenTransfer{
+			mint:     data.Info.Mint,
+			amount:   amt,
+			decimals: data.Info.TokenAmount.Decimals,
+		}
+	}
+	return nil
+}
+
+func (p *Parser) processRouterSwaps(instructionIndex int) []SwapData {
 	var swaps []SwapData
 
-	// get inner instructions for this index
 	innerInstructions := p.getInnerInstructions(instructionIndex)
 	if len(innerInstructions) == 0 {
 		return swaps
 	}
 
-	// track which protocols we've processed to avoid duplicates
 	processedProtocols := make(map[string]bool)
 
-	// check program IDs of inner instructions to determine swap type
 	for _, inner := range innerInstructions {
 		progID := p.allAccountKeys[inner.ProgramIDIndex]
 
@@ -271,28 +316,35 @@ func (p *Parser) processTradingBotSwaps(instructionIndex int) []SwapData {
 		case (progID.Equals(RAYDIUM_V4_PROGRAM_ID) ||
 			progID.Equals(RAYDIUM_CPMM_PROGRAM_ID) ||
 			progID.Equals(RAYDIUM_AMM_PROGRAM_ID) ||
-			progID.Equals(RAYDIUM_CONCENTRATED_LIQUIDITY_PROGRAM_ID)) && !processedProtocols["raydium"]:
-			processedProtocols["raydium"] = true
+			progID.Equals(RAYDIUM_CONCENTRATED_LIQUIDITY_PROGRAM_ID)) && !processedProtocols[PROTOCOL_RAYDIUM]:
+			processedProtocols[PROTOCOL_RAYDIUM] = true
 			if raydSwaps := p.processRaydSwaps(instructionIndex); len(raydSwaps) > 0 {
 				swaps = append(swaps, raydSwaps...)
 			}
 
-		case progID.Equals(ORCA_PROGRAM_ID) && !processedProtocols["orca"]:
-			processedProtocols["orca"] = true
+		case progID.Equals(ORCA_PROGRAM_ID) && !processedProtocols[PROTOCOL_ORCA]:
+			processedProtocols[PROTOCOL_ORCA] = true
 			if orcaSwaps := p.processOrcaSwaps(instructionIndex); len(orcaSwaps) > 0 {
 				swaps = append(swaps, orcaSwaps...)
 			}
 
 		case (progID.Equals(METEORA_PROGRAM_ID) ||
-			progID.Equals(METEORA_POOLS_PROGRAM_ID)) && !processedProtocols["meteora"]:
-			processedProtocols["meteora"] = true
+			progID.Equals(METEORA_POOLS_PROGRAM_ID) ||
+			progID.Equals(METEORA_DLMM_PROGRAM_ID)) && !processedProtocols[PROTOCOL_METEORA]:
+			processedProtocols[PROTOCOL_METEORA] = true
 			if meteoraSwaps := p.processMeteoraSwaps(instructionIndex); len(meteoraSwaps) > 0 {
 				swaps = append(swaps, meteoraSwaps...)
 			}
 
+		case progID.Equals(PUMPFUN_AMM_PROGRAM_ID) && !processedProtocols[PROTOCOL_PUMPFUN]:
+			processedProtocols[PROTOCOL_PUMPFUN] = true
+			if pumpfunAMMSwaps := p.processPumpfunAMMSwaps(instructionIndex); len(pumpfunAMMSwaps) > 0 {
+				swaps = append(swaps, pumpfunAMMSwaps...)
+			}
+
 		case (progID.Equals(PUMP_FUN_PROGRAM_ID) ||
-			progID.Equals(solana.MustPublicKeyFromBase58("BSfD6SHZigAfDWSjzD5Q41jw8LmKwtmjskPH9XW1mrRW"))) && !processedProtocols["pumpfun"]:
-			processedProtocols["pumpfun"] = true
+			progID.Equals(solana.MustPublicKeyFromBase58("BSfD6SHZigAfDWSjzD5Q41jw8LmKwtmjskPH9XW1mrRW"))) && !processedProtocols[PROTOCOL_PUMPFUN]:
+			processedProtocols[PROTOCOL_PUMPFUN] = true
 			if pumpfunSwaps := p.processPumpfunSwaps(instructionIndex); len(pumpfunSwaps) > 0 {
 				swaps = append(swaps, pumpfunSwaps...)
 			}
@@ -302,13 +354,12 @@ func (p *Parser) processTradingBotSwaps(instructionIndex int) []SwapData {
 	return swaps
 }
 
-// helper function to get inner instructions for a given instruction index
 func (p *Parser) getInnerInstructions(index int) []solana.CompiledInstruction {
-	if p.tx.Meta == nil || p.tx.Meta.InnerInstructions == nil {
+	if p.txMeta == nil || p.txMeta.InnerInstructions == nil {
 		return nil
 	}
 
-	for _, inner := range p.tx.Meta.InnerInstructions {
+	for _, inner := range p.txMeta.InnerInstructions {
 		if inner.Index == uint16(index) {
 			return inner.Instructions
 		}
