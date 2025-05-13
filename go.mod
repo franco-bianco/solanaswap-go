@@ -1,4 +1,4 @@
-module github.com/fntz/solanaswap-go
+module github.com/franco-bianco/solanaswap-go
 
 go 1.23.2
 

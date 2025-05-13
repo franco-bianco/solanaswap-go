@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 
-	solanaswapgo "github.com/fntz/solanaswap-go/solanaswap-go"
+	solanaswapgo "github.com/franco-bianco/solanaswap-go/solanaswap-go"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 )
