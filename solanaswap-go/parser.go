@@ -11,10 +11,11 @@ import (
 )
 
 const (
-	PROTOCOL_RAYDIUM = "raydium"
-	PROTOCOL_ORCA    = "orca"
-	PROTOCOL_METEORA = "meteora"
-	PROTOCOL_PUMPFUN = "pumpfun"
+	PROTOCOL_RAYDIUM           = "raydium"
+	PROTOCOL_ORCA              = "orca"
+	PROTOCOL_METEORA           = "meteora"
+	PROTOCOL_PUMPFUN           = "pumpfun"
+	PROTOCOL_RAYDIUM_LAUNCHPAD = "raydiumLaunchpad"
 )
 
 type TokenTransfer struct {
@@ -112,7 +113,7 @@ func (p *Parser) ParseTransaction() ([]SwapData, error) {
 			progID.Equals(RAYDIUM_AMM_PROGRAM_ID) ||
 			progID.Equals(RAYDIUM_CONCENTRATED_LIQUIDITY_PROGRAM_ID) ||
 			progID.Equals(solana.MustPublicKeyFromBase58("AP51WLiiqTdbZfgyRMs35PsZpdmLuPDdHYmrB23pEtMU")):
-			parsedSwaps = append(parsedSwaps, p.processRaydSwaps(i)...)
+			parsedSwaps = append(parsedSwaps, p.processRaydSwaps(i, RAYDIUM)...)
 		case progID.Equals(ORCA_PROGRAM_ID):
 			parsedSwaps = append(parsedSwaps, p.processOrcaSwaps(i)...)
 		case progID.Equals(METEORA_PROGRAM_ID) || progID.Equals(METEORA_POOLS_PROGRAM_ID) || progID.Equals(METEORA_DLMM_PROGRAM_ID):
@@ -122,6 +123,8 @@ func (p *Parser) ParseTransaction() ([]SwapData, error) {
 		case progID.Equals(PUMP_FUN_PROGRAM_ID) ||
 			progID.Equals(solana.MustPublicKeyFromBase58("BSfD6SHZigAfDWSjzD5Q41jw8LmKwtmjskPH9XW1mrRW")):
 			parsedSwaps = append(parsedSwaps, p.processPumpfunSwaps(i)...)
+		case progID.Equals(RAYDIUM_LAUNCHPAD_PROGRAM_ID):
+			parsedSwaps = append(parsedSwaps, p.processRaydSwaps(i, RAYDIUM_LAUNCHPAD)...)
 		}
 	}
 
@@ -346,7 +349,7 @@ func (p *Parser) processRouterSwaps(instructionIndex int) []SwapData {
 			progID.Equals(RAYDIUM_AMM_PROGRAM_ID) ||
 			progID.Equals(RAYDIUM_CONCENTRATED_LIQUIDITY_PROGRAM_ID)) && !processedProtocols[PROTOCOL_RAYDIUM]:
 			processedProtocols[PROTOCOL_RAYDIUM] = true
-			if raydSwaps := p.processRaydSwaps(instructionIndex); len(raydSwaps) > 0 {
+			if raydSwaps := p.processRaydSwaps(instructionIndex, RAYDIUM); len(raydSwaps) > 0 {
 				swaps = append(swaps, raydSwaps...)
 			}
 
@@ -375,6 +378,12 @@ func (p *Parser) processRouterSwaps(instructionIndex int) []SwapData {
 			processedProtocols[PROTOCOL_PUMPFUN] = true
 			if pumpfunSwaps := p.processPumpfunSwaps(instructionIndex); len(pumpfunSwaps) > 0 {
 				swaps = append(swaps, pumpfunSwaps...)
+			}
+
+		case progID.Equals(RAYDIUM_LAUNCHPAD_PROGRAM_ID) && !processedProtocols[PROTOCOL_RAYDIUM_LAUNCHPAD]:
+			processedProtocols[PROTOCOL_RAYDIUM_LAUNCHPAD] = true
+			if raydLaunchpadSwaps := p.processRaydSwaps(instructionIndex, RAYDIUM_LAUNCHPAD); len(raydLaunchpadSwaps) > 0 {
+				swaps = append(swaps, raydLaunchpadSwaps...)
 			}
 		}
 	}

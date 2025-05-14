@@ -15,6 +15,7 @@ var (
 	MAESTRO_PROGRAM_ID    = solana.MustPublicKeyFromBase58("MaestroAAe9ge5HTc64VbBQZ6fP77pwvrhM8i1XWSAx")
 	NOVA_PROGRAM_ID       = solana.MustPublicKeyFromBase58("NoVA1TmDUqksaj2hB1nayFkPysjJbFiU76dT4qPw2wm")
 
+	RAYDIUM_LAUNCHPAD_PROGRAM_ID              = solana.MustPublicKeyFromBase58("LanMV9sAd7wArD4vJFi2qDdfnVhFxYSUg6eADduJ3uj")
 	RAYDIUM_V4_PROGRAM_ID                     = solana.MustPublicKeyFromBase58("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8")
 	RAYDIUM_AMM_PROGRAM_ID                    = solana.MustPublicKeyFromBase58("routeUGWgWzqBWFcrCfv8tritsqukccJPu3q5GPP3xS")
 	RAYDIUM_CPMM_PROGRAM_ID                   = solana.MustPublicKeyFromBase58("CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C")
@@ -33,12 +34,13 @@ var (
 type SwapType string
 
 const (
-	PUMP_FUN SwapType = "PumpFun"
-	JUPITER  SwapType = "Jupiter"
-	RAYDIUM  SwapType = "Raydium"
-	OKX      SwapType = "OKX"
-	ORCA     SwapType = "Orca"
-	METEORA  SwapType = "Meteora"
-	MOONSHOT SwapType = "Moonshot"
-	UNKNOWN  SwapType = "Unknown"
+	PUMP_FUN          SwapType = "PumpFun"
+	JUPITER           SwapType = "Jupiter"
+	RAYDIUM           SwapType = "Raydium"
+	OKX               SwapType = "OKX"
+	ORCA              SwapType = "Orca"
+	METEORA           SwapType = "Meteora"
+	MOONSHOT          SwapType = "Moonshot"
+	UNKNOWN           SwapType = "Unknown"
+	RAYDIUM_LAUNCHPAD SwapType = "RaydiumLaunchpad"
 )

@@ -34,6 +34,7 @@ Example Transactions:
 - Moonshot: 2XYu86VrUXiwNNj8WvngcXGytrCsSrpay69Rt3XBz9YZvCQcZJLjvDfh9UWETFtFW47vi4xG2CkiarRJwSe6VekE (Sell)
 - Multiple AMMs: 46Jp5EEUrmdCVcE3jeewqUmsMHhqiWWtj243UZNDFZ3mmma6h2DF4AkgPE9ToRYVLVrfKQCJphrvxbNk68Lub9vw //! not supported yet
 - OKX: 5xaT2SXQUyvyLGsnyyoKMwsDoHrx1enCKofkdRMdNaL5MW26gjQBM3AWebwjTJ49uqEqnFu5d9nXJek6gUSGCqbL
+- Raydium Launchpad: 3UzYCVyppWbG9md5KkxnLsL9KeRAw84SKzfhJoKbGeZ8GPQJU1LtzFmEJT3KcawTopKuxoFhYjbgriooVKBttMBJ
 */
 
 type Trade struct {

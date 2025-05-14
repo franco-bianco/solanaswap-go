@@ -25,7 +25,7 @@ type TokenInfo struct {
 	Decimals uint8
 }
 
-func (p *Parser) processRaydSwaps(instructionIndex int) []SwapData {
+func (p *Parser) processRaydSwaps(instructionIndex int, swapType SwapType) []SwapData {
 	var swaps []SwapData
 	for _, innerInstructionSet := range p.txMeta.InnerInstructions {
 		if innerInstructionSet.Index == uint16(instructionIndex) {
@@ -34,12 +34,12 @@ func (p *Parser) processRaydSwaps(instructionIndex int) []SwapData {
 				case p.isTransfer(innerInstruction):
 					transfer := p.processTransfer(innerInstruction)
 					if transfer != nil {
-						swaps = append(swaps, SwapData{Type: RAYDIUM, Data: transfer})
+						swaps = append(swaps, SwapData{Type: swapType, Data: transfer})
 					}
 				case p.isTransferCheck(innerInstruction):
 					transfer := p.processTransferCheck(innerInstruction)
 					if transfer != nil {
-						swaps = append(swaps, SwapData{Type: RAYDIUM, Data: transfer})
+						swaps = append(swaps, SwapData{Type: swapType, Data: transfer})
 					}
 				}
 			}
