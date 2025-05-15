@@ -91,7 +91,7 @@ func (p *Parser) processOKXRouterSwaps(instructionIndex int) []SwapData {
 			if processedProtocols[RAYDIUM] {
 				continue
 			}
-			if raydSwaps := p.processRaydSwaps(instructionIndex); len(raydSwaps) > 0 {
+			if raydSwaps := p.processRaydSwaps(instructionIndex, RAYDIUM); len(raydSwaps) > 0 {
 				for _, swap := range raydSwaps {
 					key := getSwapKey(swap)
 					if !seen[key] {
@@ -147,6 +147,21 @@ func (p *Parser) processOKXRouterSwaps(instructionIndex int) []SwapData {
 					}
 				}
 				processedProtocols[PUMP_FUN] = true
+			}
+
+		case progID.Equals(RAYDIUM_LAUNCHPAD_PROGRAM_ID):
+			if processedProtocols[RAYDIUM_LAUNCHPAD] {
+				continue
+			}
+			if raydLaunchpadSwaps := p.processRaydSwaps(instructionIndex, RAYDIUM_LAUNCHPAD); len(raydLaunchpadSwaps) > 0 {
+				for _, swap := range raydLaunchpadSwaps {
+					key := getSwapKey(swap)
+					if !seen[key] {
+						swaps = append(swaps, swap)
+						seen[key] = true
+					}
+				}
+				processedProtocols[RAYDIUM_LAUNCHPAD] = true
 			}
 		}
 	}

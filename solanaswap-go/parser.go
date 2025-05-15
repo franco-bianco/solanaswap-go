@@ -11,10 +11,11 @@ import (
 )
 
 const (
-	PROTOCOL_RAYDIUM = "raydium"
-	PROTOCOL_ORCA    = "orca"
-	PROTOCOL_METEORA = "meteora"
-	PROTOCOL_PUMPFUN = "pumpfun"
+	PROTOCOL_RAYDIUM           = "raydium"
+	PROTOCOL_ORCA              = "orca"
+	PROTOCOL_METEORA           = "meteora"
+	PROTOCOL_PUMPFUN           = "pumpfun"
+	PROTOCOL_RAYDIUM_LAUNCHPAD = "raydiumLaunchpad"
 )
 
 type TokenTransfer struct {
@@ -112,7 +113,7 @@ func (p *Parser) ParseTransaction() ([]SwapData, error) {
 			progID.Equals(RAYDIUM_AMM_PROGRAM_ID) ||
 			progID.Equals(RAYDIUM_CONCENTRATED_LIQUIDITY_PROGRAM_ID) ||
 			progID.Equals(solana.MustPublicKeyFromBase58("AP51WLiiqTdbZfgyRMs35PsZpdmLuPDdHYmrB23pEtMU")):
-			parsedSwaps = append(parsedSwaps, p.processRaydSwaps(i)...)
+			parsedSwaps = append(parsedSwaps, p.processRaydSwaps(i, RAYDIUM)...)
 		case progID.Equals(ORCA_PROGRAM_ID):
 			parsedSwaps = append(parsedSwaps, p.processOrcaSwaps(i)...)
 		case progID.Equals(METEORA_PROGRAM_ID) || progID.Equals(METEORA_POOLS_PROGRAM_ID) || progID.Equals(METEORA_DLMM_PROGRAM_ID):
@@ -122,6 +123,8 @@ func (p *Parser) ParseTransaction() ([]SwapData, error) {
 		case progID.Equals(PUMP_FUN_PROGRAM_ID) ||
 			progID.Equals(solana.MustPublicKeyFromBase58("BSfD6SHZigAfDWSjzD5Q41jw8LmKwtmjskPH9XW1mrRW")):
 			parsedSwaps = append(parsedSwaps, p.processPumpfunSwaps(i)...)
+		case progID.Equals(RAYDIUM_LAUNCHPAD_PROGRAM_ID):
+			parsedSwaps = append(parsedSwaps, p.processRaydSwaps(i, RAYDIUM_LAUNCHPAD)...)
 		}
 	}
 
@@ -191,76 +194,104 @@ func (p *Parser) ProcessSwapData(swapDatas []SwapData) (*SwapInfo, error) {
 	}
 
 	if len(pumpfunSwaps) > 0 {
-		switch data := pumpfunSwaps[0].Data.(type) {
-		case *PumpfunTradeEvent:
-			if data.IsBuy {
+		// Check if it's a PumpfunTradeEvent
+		if tradeEvent, ok := pumpfunSwaps[0].Data.(*PumpfunTradeEvent); ok {
+			if tradeEvent.IsBuy {
 				swapInfo.TokenInMint = NATIVE_SOL_MINT_PROGRAM_ID
-				swapInfo.TokenInAmount = data.SolAmount
+				swapInfo.TokenInAmount = tradeEvent.SolAmount
 				swapInfo.TokenInDecimals = 9
-				swapInfo.TokenOutMint = data.Mint
-				swapInfo.TokenOutAmount = data.TokenAmount
-				swapInfo.TokenOutDecimals = p.splDecimalsMap[data.Mint.String()]
+				swapInfo.TokenOutMint = tradeEvent.Mint
+				swapInfo.TokenOutAmount = tradeEvent.TokenAmount
+				swapInfo.TokenOutDecimals = p.splDecimalsMap[tradeEvent.Mint.String()]
 			} else {
-				swapInfo.TokenInMint = data.Mint
-				swapInfo.TokenInAmount = data.TokenAmount
-				swapInfo.TokenInDecimals = p.splDecimalsMap[data.Mint.String()]
+				swapInfo.TokenInMint = tradeEvent.Mint
+				swapInfo.TokenInAmount = tradeEvent.TokenAmount
+				swapInfo.TokenInDecimals = p.splDecimalsMap[tradeEvent.Mint.String()]
 				swapInfo.TokenOutMint = NATIVE_SOL_MINT_PROGRAM_ID
-				swapInfo.TokenOutAmount = data.SolAmount
+				swapInfo.TokenOutAmount = tradeEvent.SolAmount
 				swapInfo.TokenOutDecimals = 9
 			}
 			swapInfo.AMMs = append(swapInfo.AMMs, string(pumpfunSwaps[0].Type))
-			swapInfo.Timestamp = time.Unix(int64(data.Timestamp), 0)
+			swapInfo.Timestamp = time.Unix(int64(tradeEvent.Timestamp), 0)
 			return swapInfo, nil
-		default:
-			otherSwaps = append(otherSwaps, pumpfunSwaps...)
+		} else {
+			// Detailed logging for investigation
+			p.Log.Infof("Processing PumpFun AMM swaps, count: %d", len(pumpfunSwaps))
+
+			// Check if it's a buy transaction
+			isBuy := p.isPumpFunAMMBuyTransaction(pumpfunSwaps)
+
+			if isBuy {
+				p.Log.Infof("Detected PumpFun BUY transaction")
+
+				var tokenTransfer *TokenTransfer
+				var totalSolAmount uint64
+
+				for _, swap := range pumpfunSwaps {
+					transfer := getTransferFromSwapData(swap)
+					if transfer == nil {
+						continue
+					}
+
+					if transfer.mint == NATIVE_SOL_MINT_PROGRAM_ID.String() {
+						totalSolAmount += transfer.amount
+						p.Log.Infof("Added SOL amount: %d, total now: %d",
+							transfer.amount, totalSolAmount)
+					} else {
+						tokenTransfer = transfer
+						p.Log.Infof("Found token transfer: %s, amount: %d",
+							tokenTransfer.mint, tokenTransfer.amount)
+					}
+				}
+
+				if tokenTransfer != nil {
+					// It's a buy: SOL -> Token
+					swapInfo.TokenInMint = NATIVE_SOL_MINT_PROGRAM_ID
+					swapInfo.TokenInAmount = totalSolAmount
+					swapInfo.TokenInDecimals = 9
+					swapInfo.TokenOutMint = solana.MustPublicKeyFromBase58(tokenTransfer.mint)
+					swapInfo.TokenOutAmount = tokenTransfer.amount
+					swapInfo.TokenOutDecimals = tokenTransfer.decimals
+					swapInfo.AMMs = append(swapInfo.AMMs, string(PUMP_FUN))
+					swapInfo.Timestamp = time.Now()
+
+					p.Log.Infof("Generated swap info for BUY transaction: %+v", swapInfo)
+					return swapInfo, nil
+				}
+			} else {
+				// It's a sell or not identifiable as a buy - process normally
+				p.Log.Infof("Processing as a SELL or normal transaction")
+				otherSwaps = append(otherSwaps, pumpfunSwaps...)
+			}
 		}
 	}
 
 	if len(otherSwaps) > 0 {
-		var uniqueTokens []TokenTransfer
-		seenTokens := make(map[string]bool)
+		// Track the chronological order of transfers
+		var allTransfers []TokenTransfer
 
 		for _, swapData := range otherSwaps {
 			transfer := getTransferFromSwapData(swapData)
-			if transfer != nil && !seenTokens[transfer.mint] {
-				uniqueTokens = append(uniqueTokens, *transfer)
-				seenTokens[transfer.mint] = true
+			if transfer != nil {
+				allTransfers = append(allTransfers, *transfer)
 			}
 		}
 
-		if len(uniqueTokens) >= 2 {
-			inputTransfer := uniqueTokens[0]
-			outputTransfer := uniqueTokens[len(uniqueTokens)-1]
+		// If we have at least a starting and ending transfer
+		if len(allTransfers) >= 2 {
+			// Use first transfer as input and last as output for a multi-hop swap
+			inputTransfer := allTransfers[0]
+			outputTransfer := allTransfers[len(allTransfers)-1]
 
-			seenInputs := make(map[string]bool)
-			seenOutputs := make(map[string]bool)
-			var totalInputAmount uint64 = 0
-			var totalOutputAmount uint64 = 0
-
-			for _, swapData := range otherSwaps {
-				transfer := getTransferFromSwapData(swapData)
-				if transfer == nil {
-					continue
-				}
-
-				amountStr := fmt.Sprintf("%d-%s", transfer.amount, transfer.mint)
-				if transfer.mint == inputTransfer.mint && !seenInputs[amountStr] {
-					totalInputAmount += transfer.amount
-					seenInputs[amountStr] = true
-				}
-				if transfer.mint == outputTransfer.mint && !seenOutputs[amountStr] {
-					totalOutputAmount += transfer.amount
-					seenOutputs[amountStr] = true
-				}
-			}
-
+			// For multi-hop routes like RAY -> OXY -> WSOL, we want RAY as input and WSOL as output
 			swapInfo.TokenInMint = solana.MustPublicKeyFromBase58(inputTransfer.mint)
-			swapInfo.TokenInAmount = totalInputAmount
+			swapInfo.TokenInAmount = inputTransfer.amount
 			swapInfo.TokenInDecimals = inputTransfer.decimals
 			swapInfo.TokenOutMint = solana.MustPublicKeyFromBase58(outputTransfer.mint)
-			swapInfo.TokenOutAmount = totalOutputAmount
+			swapInfo.TokenOutAmount = outputTransfer.amount
 			swapInfo.TokenOutDecimals = outputTransfer.decimals
 
+			// Collect unique AMMs used in this swap
 			seenAMMs := make(map[string]bool)
 			for _, swapData := range otherSwaps {
 				if !seenAMMs[string(swapData.Type)] {
@@ -318,7 +349,7 @@ func (p *Parser) processRouterSwaps(instructionIndex int) []SwapData {
 			progID.Equals(RAYDIUM_AMM_PROGRAM_ID) ||
 			progID.Equals(RAYDIUM_CONCENTRATED_LIQUIDITY_PROGRAM_ID)) && !processedProtocols[PROTOCOL_RAYDIUM]:
 			processedProtocols[PROTOCOL_RAYDIUM] = true
-			if raydSwaps := p.processRaydSwaps(instructionIndex); len(raydSwaps) > 0 {
+			if raydSwaps := p.processRaydSwaps(instructionIndex, RAYDIUM); len(raydSwaps) > 0 {
 				swaps = append(swaps, raydSwaps...)
 			}
 
@@ -347,6 +378,12 @@ func (p *Parser) processRouterSwaps(instructionIndex int) []SwapData {
 			processedProtocols[PROTOCOL_PUMPFUN] = true
 			if pumpfunSwaps := p.processPumpfunSwaps(instructionIndex); len(pumpfunSwaps) > 0 {
 				swaps = append(swaps, pumpfunSwaps...)
+			}
+
+		case progID.Equals(RAYDIUM_LAUNCHPAD_PROGRAM_ID) && !processedProtocols[PROTOCOL_RAYDIUM_LAUNCHPAD]:
+			processedProtocols[PROTOCOL_RAYDIUM_LAUNCHPAD] = true
+			if raydLaunchpadSwaps := p.processRaydSwaps(instructionIndex, RAYDIUM_LAUNCHPAD); len(raydLaunchpadSwaps) > 0 {
+				swaps = append(swaps, raydLaunchpadSwaps...)
 			}
 		}
 	}
