@@ -14,6 +14,9 @@ var (
 	BLOOM_PROGRAM_ID      = solana.MustPublicKeyFromBase58("b1oomGGqPKGD6errbyfbVMBuzSC8WtAAYo8MwNafWW1")
 	MAESTRO_PROGRAM_ID    = solana.MustPublicKeyFromBase58("MaestroAAe9ge5HTc64VbBQZ6fP77pwvrhM8i1XWSAx")
 	NOVA_PROGRAM_ID       = solana.MustPublicKeyFromBase58("NoVA1TmDUqksaj2hB1nayFkPysjJbFiU76dT4qPw2wm")
+	TROJAN_PROGRAM_ID     = solana.MustPublicKeyFromBase58("DM2dmBUi2he1bot4xF7PaSGLorUjWLm2DMFsWiTPuXzb")
+	BONKBOT_PROGRAM_ID    = solana.MustPublicKeyFromBase58("AnCKmodpxycRZoAFgVwGjWuxP9wJPamghfvUw1fwKdpK")
+	SHURIKEN_PROGRAM_ID   = solana.MustPublicKeyFromBase58("HEzM8TqVBvsgNKgqSbNkbL8J4Qq4DiRhz4NFXDKAKZiq")
 
 	RAYDIUM_V4_PROGRAM_ID                     = solana.MustPublicKeyFromBase58("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8")
 	RAYDIUM_AMM_PROGRAM_ID                    = solana.MustPublicKeyFromBase58("routeUGWgWzqBWFcrCfv8tritsqukccJPu3q5GPP3xS")

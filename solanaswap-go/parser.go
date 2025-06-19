@@ -91,7 +91,10 @@ func (p *Parser) ParseTransaction() ([]SwapData, error) {
 			progID.Equals(MINTECH_PROGRAM_ID) ||
 			progID.Equals(BLOOM_PROGRAM_ID) ||
 			progID.Equals(NOVA_PROGRAM_ID) ||
-			progID.Equals(MAESTRO_PROGRAM_ID):
+			progID.Equals(MAESTRO_PROGRAM_ID) ||
+			progID.Equals(TROJAN_PROGRAM_ID) ||
+			progID.Equals(BONKBOT_PROGRAM_ID) ||
+			progID.Equals(SHURIKEN_PROGRAM_ID):
 			if innerSwaps := p.processRouterSwaps(i); len(innerSwaps) > 0 {
 				parsedSwaps = append(parsedSwaps, innerSwaps...)
 			}
