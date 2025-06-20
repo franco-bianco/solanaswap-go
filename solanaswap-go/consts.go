@@ -41,4 +41,5 @@ const (
 	METEORA  SwapType = "Meteora"
 	MOONSHOT SwapType = "Moonshot"
 	UNKNOWN  SwapType = "Unknown"
+	GENERIC_SWAP SwapType = "GenericSwap"
 )
