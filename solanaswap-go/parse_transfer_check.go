@@ -31,13 +31,13 @@ func (p *Parser) processMeteoraSwaps(instructionIndex int) []SwapData {
 		if innerInstructionSet.Index == uint16(instructionIndex) {
 			for _, innerInstruction := range innerInstructionSet.Instructions {
 				switch {
-				case p.isTransferCheck(innerInstruction):
-					transfer := p.processTransferCheck(innerInstruction)
+				case p.isTransferCheck(p.convertRPCToSolanaInstruction(innerInstruction)):
+					transfer := p.processTransferCheck(p.convertRPCToSolanaInstruction(innerInstruction))
 					if transfer != nil {
 						swaps = append(swaps, SwapData{Type: METEORA, Data: transfer})
 					}
-				case p.isTransfer(innerInstruction):
-					transfer := p.processTransfer(innerInstruction)
+				case p.isTransfer(p.convertRPCToSolanaInstruction(innerInstruction)):
+					transfer := p.processTransfer(p.convertRPCToSolanaInstruction(innerInstruction))
 					if transfer != nil {
 						swaps = append(swaps, SwapData{Type: METEORA, Data: transfer})
 					}

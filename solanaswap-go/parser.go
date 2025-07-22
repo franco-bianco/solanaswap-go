@@ -361,7 +361,11 @@ func (p *Parser) getInnerInstructions(index int) []solana.CompiledInstruction {
 
 	for _, inner := range p.txMeta.InnerInstructions {
 		if inner.Index == uint16(index) {
-			return inner.Instructions
+			result := make([]solana.CompiledInstruction, len(inner.Instructions))
+			for i, inst := range inner.Instructions {
+				result[i] = p.convertRPCToSolanaInstruction(inst)
+			}
+			return result
 		}
 	}
 
