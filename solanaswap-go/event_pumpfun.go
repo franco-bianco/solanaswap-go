@@ -58,16 +58,27 @@ func (p *Parser) processPumpfunAMMSwaps(instructionIndex int) []SwapData {
 	for _, innerInstructionSet := range p.txMeta.InnerInstructions {
 		if innerInstructionSet.Index == uint16(instructionIndex) {
 			for _, innerInstruction := range innerInstructionSet.Instructions {
+				solanaInstr := p.convertRPCToSolanaInstruction(innerInstruction)
+
 				switch {
-				case p.isTransferCheck(p.convertRPCToSolanaInstruction(innerInstruction)):
-					transfer := p.processTransferCheck(p.convertRPCToSolanaInstruction(innerInstruction))
+				case p.isTransferCheck(solanaInstr):
+					transfer := p.processTransferCheck(solanaInstr)
 					if transfer != nil {
 						swaps = append(swaps, SwapData{Type: PUMP_FUN, Data: transfer})
 					}
-				case p.isTransfer(p.convertRPCToSolanaInstruction(innerInstruction)):
-					transfer := p.processTransfer(p.convertRPCToSolanaInstruction(innerInstruction))
+				case p.isTransfer(solanaInstr):
+					transfer := p.processTransfer(solanaInstr)
 					if transfer != nil {
 						swaps = append(swaps, SwapData{Type: PUMP_FUN, Data: transfer})
+					}
+				}
+				if p.isPumpFunCreateEventInstruction(solanaInstr) {
+					eventData, err := p.parsePumpfunCreateEventInstruction(solanaInstr)
+					if err != nil {
+						p.Log.Errorf("error processing Pumpfun create event: %s", err)
+					}
+					if eventData != nil {
+						swaps = append(swaps, SwapData{Type: PUMP_FUN, Data: eventData})
 					}
 				}
 			}
@@ -88,6 +99,25 @@ func (p *Parser) parsePumpfunTradeEventInstruction(instruction solana.CompiledIn
 
 func handlePumpfunTradeEvent(decoder *ag_binary.Decoder) (*PumpfunTradeEvent, error) {
 	var trade PumpfunTradeEvent
+	if err := decoder.Decode(&trade); err != nil {
+		return nil, fmt.Errorf("error unmarshaling TradeEvent: %s", err)
+	}
+
+	return &trade, nil
+}
+
+func (p *Parser) parsePumpfunCreateEventInstruction(instruction solana.CompiledInstruction) (*PumpfunCreateEvent, error) {
+	decodedBytes, err := base58.Decode(instruction.Data.String())
+	if err != nil {
+		return nil, fmt.Errorf("error decoding instruction data: %s", err)
+	}
+	decoder := ag_binary.NewBorshDecoder(decodedBytes[16:])
+
+	return handlePumpfunCreateEvent(decoder)
+}
+
+func handlePumpfunCreateEvent(decoder *ag_binary.Decoder) (*PumpfunCreateEvent, error) {
+	var trade PumpfunCreateEvent
 	if err := decoder.Decode(&trade); err != nil {
 		return nil, fmt.Errorf("error unmarshaling TradeEvent: %s", err)
 	}
