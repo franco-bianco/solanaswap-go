@@ -47,6 +47,15 @@ func (p *Parser) processPumpfunSwaps(instructionIndex int) []SwapData {
 						swaps = append(swaps, SwapData{Type: PUMP_FUN, Data: eventData})
 					}
 				}
+				if p.isPumpFunCreateEventInstruction(innerInstruction) {
+					eventData, err := p.parsePumpfunCreateEventInstruction(innerInstruction)
+					if err != nil {
+						p.Log.Errorf("error processing Pumpfun create event: %s", err)
+					}
+					if eventData != nil {
+						swaps = append(swaps, SwapData{Type: PUMP_FUN, Data: eventData})
+					}
+				}
 			}
 		}
 	}
@@ -88,6 +97,25 @@ func (p *Parser) parsePumpfunTradeEventInstruction(instruction solana.CompiledIn
 
 func handlePumpfunTradeEvent(decoder *ag_binary.Decoder) (*PumpfunTradeEvent, error) {
 	var trade PumpfunTradeEvent
+	if err := decoder.Decode(&trade); err != nil {
+		return nil, fmt.Errorf("error unmarshaling TradeEvent: %s", err)
+	}
+
+	return &trade, nil
+}
+
+func (p *Parser) parsePumpfunCreateEventInstruction(instruction solana.CompiledInstruction) (*PumpfunCreateEvent, error) {
+	decodedBytes, err := base58.Decode(instruction.Data.String())
+	if err != nil {
+		return nil, fmt.Errorf("error decoding instruction data: %s", err)
+	}
+	decoder := ag_binary.NewBorshDecoder(decodedBytes[16:])
+
+	return handlePumpfunCreateEvent(decoder)
+}
+
+func handlePumpfunCreateEvent(decoder *ag_binary.Decoder) (*PumpfunCreateEvent, error) {
+	var trade PumpfunCreateEvent
 	if err := decoder.Decode(&trade); err != nil {
 		return nil, fmt.Errorf("error unmarshaling TradeEvent: %s", err)
 	}
