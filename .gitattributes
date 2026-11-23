@@ -1,0 +1,3 @@
+* text=auto eol=lf
+*.go text eol=lf
+testdata/** -text

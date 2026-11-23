@@ -1,0 +1,24 @@
+[
+  {
+    "file": "issue27_pumpswap_sell_bot_fee_4QAQRuuj.json",
+    "description": "Issue #27: PumpSwap sell through a trading bot; the bot's 1% SOL fee must be reported as a fee, not part of the swap",
+    "trader": "F8fB6ZkhL7qfUttYcpWMnaKyz2NRrXhYvsTDYUhrPZCq",
+    "inMint": "CjqxraDuTMEcfhdqY8qEaMY43icdBrkt3EXciNVpump",
+    "inAmount": "11472097615",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "432337456",
+    "amms": ["PumpSwap"],
+    "fees": [{"kind": "platform", "amount": "4241437", "recipient": "9RYJ3qr5eU5xAooqVcbmdeusjcViL5Nkiq7Gske3tiKq"}]
+  },
+  {
+    "file": "issue35_jupiter_dlmm_3HZzfDRB.json",
+    "description": "Issue #35: Jupiter route through Meteora DLMM; timestamp must be the block time and the direction is USDC -> Preb (verified from balances)",
+    "trader": "AZ47eJFFAYCjU51QWn6iazXCUWFkQoHnRSJR3tp2DGsP",
+    "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "inAmount": "138404396088",
+    "outMint": "Preb5VKsmKgMGhMKUhDpe7A2AhMDmrZtMMZmvFEhLbU",
+    "outAmount": "201138329611",
+    "amms": ["Meteora DLMM"],
+    "routers": ["Jupiter"]
+  }
+]
