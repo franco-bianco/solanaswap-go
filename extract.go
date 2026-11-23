@@ -20,8 +20,6 @@ type extractor struct {
 	// ones and unregistered programs that behave like one (see
 	// collectSwapRoots). Every instruction below a swap root has swapRoot set.
 	swapRoots []*instruction
-	// unknownDEX marks swap roots of programs missing from the registry.
-	unknownDEX map[*instruction]bool
 	// userAuthorities are accounts that act on the user side of a swap: the
 	// transaction signers and every authority that moves tokens outside of a
 	// DEX invocation (routers and bots holding funds in transit). Pool
@@ -38,7 +36,6 @@ type extractor struct {
 func newExtractor(v *txView) *extractor {
 	e := &extractor{
 		v:               v,
-		unknownDEX:      make(map[*instruction]bool),
 		userAuthorities: make(map[solana.PublicKey]bool),
 		swapDebited:     make(map[solana.PublicKey]bool),
 	}
@@ -46,7 +43,7 @@ func newExtractor(v *txView) *extractor {
 		e.userAuthorities[s] = true
 	}
 	for _, root := range v.roots {
-		e.collectSwapRoots(root, nil)
+		e.collectSwapRoots(root, false)
 	}
 	for _, root := range e.swapRoots {
 		root.swapRoot = root
@@ -67,34 +64,35 @@ func newExtractor(v *txView) *extractor {
 	return e
 }
 
-// collectSwapRoots finds the DEX invocations in the subtree of ix. An
-// unregistered program counts as a DEX when an aggregator invokes it
-// directly (aggregators only call venues), or when it swaps with a signer
-// itself and has no registered program below it (otherwise it is a wrapper
-// such as a bot or custom router, and the DEX is further down).
-func (e *extractor) collectSwapRoots(ix, parent *instruction) {
+// collectSwapRoots finds the DEX invocations in the subtree of ix.
+// calledByRouter reports whether ix was invoked directly by an aggregator.
+//
+// An unregistered program counts as a DEX when a router invokes it
+// (routers only call venues), or when it swaps with a signer itself and has
+// no registered program below it. If it swaps with a signer but does call
+// registered programs, it is an unregistered router (a bot or custom
+// aggregator): its own calls are the hops.
+func (e *extractor) collectSwapRoots(ix *instruction, calledByRouter bool) {
 	spec, known := registry[ix.programID]
 	if known && spec.Kind == KindDEX {
 		e.swapRoots = append(e.swapRoots, ix)
 		return
 	}
-	if !known && !infrastructurePrograms[ix.programID] &&
-		(e.calledByAggregator(ix, parent) || (!hasRegisteredDescendant(ix) && e.looksLikeSwap(ix))) {
-		e.swapRoots = append(e.swapRoots, ix)
-		e.unknownDEX[ix] = true
-		return
+	isRouter := known && spec.Kind == KindAggregator
+	if !known && !infrastructurePrograms[ix.programID] {
+		swapsWithSigner := e.looksLikeSwap(ix)
+		switch {
+		case calledByRouter, swapsWithSigner && !hasRegisteredDescendant(ix):
+			e.swapRoots = append(e.swapRoots, ix)
+			return
+		case swapsWithSigner:
+			isRouter = true
+		}
 	}
 	for _, child := range ix.children {
-		e.collectSwapRoots(child, ix)
+		// A program invoking itself is emitting an event, not a hop.
+		e.collectSwapRoots(child, isRouter && child.programID != ix.programID)
 	}
-}
-
-func (e *extractor) calledByAggregator(ix, parent *instruction) bool {
-	if parent == nil || ix.programID == parent.programID {
-		return false // top level, or an aggregator emitting its own event
-	}
-	spec, ok := registry[parent.programID]
-	return ok && spec.Kind == KindAggregator
 }
 
 func hasRegisteredDescendant(ix *instruction) bool {

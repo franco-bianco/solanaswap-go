@@ -102,4 +102,6 @@ type Fee struct {
 	Mint      solana.PublicKey
 	Amount    uint64
 	Recipient solana.PublicKey
+
+	payer solana.PublicKey // authority that signed the payment
 }

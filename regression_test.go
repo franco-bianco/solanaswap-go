@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"errors"
+	"slices"
 	"strconv"
 	"testing"
 
@@ -232,16 +233,23 @@ func TestDepositIsNotAFee(t *testing.T) {
 	}
 }
 
+func sysTransfer(lamports uint64) []byte {
+	return binary.LittleEndian.AppendUint64([]byte{2, 0, 0, 0}, lamports)
+}
+
 // Transactions recorded before stack heights existed: a DEX invoked by a
-// bot program must still own the transfers that follow it.
+// bot program must still own the transfers that follow it, but not the
+// bot's own fee payment afterwards.
 func TestMissingStackHeights(t *testing.T) {
 	user, bot, userA, userB, vaultA, vaultB, poolAuth, mintA, mintB := testKey(1), testKey(2), testKey(3), testKey(4), testKey(5), testKey(6), testKey(7), testKey(8), testKey(9)
+	trojanFees := solana.MustPublicKeyFromBase58("9yMwSPk9mrXSN7yDHUuZurAh1sjbJsfpUqjZ7SvVtdco")
 
 	b := newTxBuilder(user)
 	o := b.top(bot, []byte{1}, user)
-	b.cpi(o, 0, raydiumCPMM, []byte{1}, user)
+	b.cpi(o, 0, raydiumCPMM, []byte{1}, user, poolAuth, userA, userB, vaultA, vaultB)
 	b.tokenTransfer(o, 0, 100, userA, vaultA, user)
 	b.tokenTransfer(o, 0, 70, vaultB, userB, poolAuth)
+	b.cpi(o, 0, solana.SystemProgramID, sysTransfer(1_000_000), user, trojanFees)
 	b.balance(userA, mintA, user, 100, 0)
 	b.balance(userB, mintB, user, 0, 70)
 	b.balance(vaultA, mintA, poolAuth, 0, 100)
@@ -253,6 +261,99 @@ func TestMissingStackHeights(t *testing.T) {
 	}
 	if len(info.AMMs) != 1 || info.AMMs[0] != "Raydium CPMM" || info.TokenInAmount != 100 || info.TokenOutAmount != 70 {
 		t.Errorf("got %q %d -> %d, want Raydium CPMM 100 -> 70", info.AMMs, info.TokenInAmount, info.TokenOutAmount)
+	}
+	if len(info.Fees) != 1 || info.Fees[0].Amount != 1_000_000 || !slices.Contains(info.Routers, "Trojan") {
+		t.Errorf("Fees = %+v, Routers = %q; want the Trojan fee", info.Fees, info.Routers)
+	}
+}
+
+// An unregistered router swaps A->B on a registered DEX and B->C on an
+// unregistered one, then pays C to the user: both hops must be found.
+func TestUnregisteredRouterWithMixedHops(t *testing.T) {
+	user, router, pda := testKey(1), testKey(2), testKey(3)
+	userA, pdaA, pdaB, pdaC, userC := testKey(4), testKey(5), testKey(6), testKey(7), testKey(8)
+	vA, vB1, vB2, vC, auth1, auth2, unknownVenue := testKey(9), testKey(10), testKey(11), testKey(12), testKey(13), testKey(14), testKey(15)
+	mA, mB, mC := testKey(16), testKey(17), testKey(18)
+
+	b := newTxBuilder(user)
+	o := b.top(router, []byte{9}, user, pda)
+	b.tokenTransfer(o, 2, 1000, userA, pdaA, user)
+	b.cpi(o, 2, raydiumCPMM, []byte{1}, pda)
+	b.tokenTransfer(o, 3, 1000, pdaA, vA, pda)
+	b.tokenTransfer(o, 3, 500, vB1, pdaB, auth1)
+	b.cpi(o, 2, unknownVenue, []byte{1}, pda)
+	b.tokenTransfer(o, 3, 500, pdaB, vB2, pda)
+	b.tokenTransfer(o, 3, 200, vC, pdaC, auth2)
+	b.tokenTransfer(o, 2, 200, pdaC, userC, pda)
+	b.balance(userA, mA, user, 1000, 0)
+	b.balance(pdaA, mA, pda, 0, 0)
+	b.balance(pdaB, mB, pda, 0, 0)
+	b.balance(pdaC, mC, pda, 0, 0)
+	b.balance(userC, mC, user, 0, 200)
+	b.balance(vA, mA, auth1, 0, 1000)
+	b.balance(vB1, mB, auth1, 500, 0)
+	b.balance(vB2, mB, auth2, 0, 500)
+	b.balance(vC, mC, auth2, 200, 0)
+
+	info, err := b.parse(t)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.TokenInMint != mA || info.TokenInAmount != 1000 || info.TokenOutMint != mC || info.TokenOutAmount != 200 || len(info.Swaps) != 2 {
+		t.Errorf("got %d %s -> %d %s in %d swaps, want 1000 A -> 200 C in 2 swaps",
+			info.TokenInAmount, info.TokenInMint, info.TokenOutAmount, info.TokenOutMint, len(info.Swaps))
+	}
+}
+
+// Fees charged by a separate unregistered program are still reported when
+// they go to a known bot fee wallet or tip account.
+func TestSeparateFeeProgram(t *testing.T) {
+	user, feeProgram, userA, userB, vaultA, vaultB, poolAuth, mintA, mintB := testKey(1), testKey(2), testKey(3), testKey(4), testKey(5), testKey(6), testKey(7), testKey(8), testKey(9)
+	trojanFees := solana.MustPublicKeyFromBase58("9yMwSPk9mrXSN7yDHUuZurAh1sjbJsfpUqjZ7SvVtdco")
+	jito := solana.MustPublicKeyFromBase58("96gYZGLnJYVFmbjzopPSU6QiEV5fGqZNyN9nmNhvrZU5")
+
+	b := newTxBuilder(user)
+	o := b.top(raydiumCPMM, []byte{1}, user)
+	b.tokenTransfer(o, 2, 100, userA, vaultA, user)
+	b.tokenTransfer(o, 2, 70, vaultB, userB, poolAuth)
+	f := b.top(feeProgram, []byte{1}, user, trojanFees, jito)
+	b.cpi(f, 2, solana.SystemProgramID, sysTransfer(1_000_000), user, trojanFees)
+	b.cpi(f, 2, solana.SystemProgramID, sysTransfer(2_000_000), user, jito)
+	b.balance(userA, mintA, user, 100, 0)
+	b.balance(userB, mintB, user, 0, 70)
+	b.balance(vaultA, mintA, poolAuth, 0, 100)
+	b.balance(vaultB, mintB, poolAuth, 70, 0)
+
+	info, err := b.parse(t)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(info.Fees) != 2 || info.Fees[0].Kind != FeeKindPlatform || info.Fees[1].Kind != FeeKindTip || !slices.Contains(info.Routers, "Trojan") {
+		t.Errorf("Fees = %+v, Routers = %q; want a Trojan fee and a Jito tip", info.Fees, info.Routers)
+	}
+}
+
+// A relayer's own tip must not be credited to the user's SOL input.
+func TestFallbackIgnoresRelayerTip(t *testing.T) {
+	relayer, user, venue, userX, vaultX, mintX := testKey(1), testKey(2), testKey(3), testKey(4), testKey(5), testKey(6)
+	jito := solana.MustPublicKeyFromBase58("96gYZGLnJYVFmbjzopPSU6QiEV5fGqZNyN9nmNhvrZU5")
+
+	b := newTxBuilder(relayer, user)
+	b.top(venue, []byte{1}, user)
+	b.top(solana.SystemProgramID, sysTransfer(50_000_000), relayer, jito)
+	b.balance(userX, mintX, user, 0, 70)
+	b.balance(vaultX, mintX, venue, 70, 0)
+	b.post[b.key(relayer)] -= 5000 + 50_000_000
+	b.post[b.key(jito)] += 50_000_000
+	b.post[b.key(user)] -= 200_000_000
+	b.post[b.key(venue)] += 200_000_000
+
+	info, err := b.parse(t)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Trader != user || info.TokenInMint != solana.WrappedSol || info.TokenInAmount != 200_000_000 || info.TokenOutAmount != 70 {
+		t.Errorf("got trader %s %d %s -> %d, want the user 200000000 SOL -> 70", info.Trader, info.TokenInAmount, info.TokenInMint, info.TokenOutAmount)
 	}
 }
 

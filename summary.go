@@ -68,15 +68,19 @@ func (e *extractor) collectFees() []Fee {
 		if t == nil || ix.swapRoot != nil || !e.isUserSide(t.authority) {
 			continue
 		}
-		if e.isUserSide(t.destination) || e.swapDebited[t.destination] || !e.besideSwap(ix) {
+		if e.isUserSide(t.destination) || e.swapDebited[t.destination] {
 			continue
 		}
 		recipient := e.v.ownerOf(t.destination)
+		_, botWallet := botFeeWallets[recipient]
+		if !tipAccounts[recipient] && !botWallet && !e.besideSwap(ix) {
+			continue
+		}
 		kind := FeeKindPlatform
 		if tipAccounts[recipient] {
 			kind = FeeKindTip
 		}
-		fees = append(fees, Fee{Kind: kind, Mint: t.mint, Amount: t.amount, Recipient: recipient})
+		fees = append(fees, Fee{Kind: kind, Mint: t.mint, Amount: t.amount, Recipient: recipient, payer: t.authority})
 	}
 	return fees
 }
@@ -126,8 +130,13 @@ func (e *extractor) balanceSwap(trader solana.PublicKey, fees []Fee) (Swap, bool
 	deposited, refunded := e.v.accountFunding(trader)
 	sol += int64(deposited) - int64(refunded)
 	delta[solana.WrappedSol] += sol
+	// Fees came out of the trader's balance only if the trader (or a
+	// router holding the trader's funds) paid them, not another signer
+	// such as a relayer.
 	for _, f := range fees {
-		delta[f.Mint] += int64(f.Amount)
+		if f.payer == trader || !e.v.signers[f.payer] {
+			delta[f.Mint] += int64(f.Amount)
+		}
 	}
 
 	var in, out []solana.PublicKey

@@ -3,6 +3,7 @@ package solanaswap
 import (
 	"fmt"
 	"math"
+	"slices"
 	"strconv"
 
 	"github.com/gagliardetto/solana-go"
@@ -170,14 +171,16 @@ func (v *txView) buildInstructionTree() error {
 			ix.outerIndex, ix.innerIndex = i, j
 
 			if in.StackHeight == 0 {
-				// Nodes did not record stack heights before 2023. Assume
-				// token and system instructions belong to the most recent
-				// program invocation and other programs to the top level.
+				// Nodes did not record stack heights before 2023. As a best
+				// effort, a token or system instruction belongs to the most
+				// recent program invocation when it touches one of that
+				// invocation's non-signer accounts (its vaults or the user's
+				// token accounts); anything else belongs to the top level.
 				ix.parent = root
 				switch {
 				case !infrastructurePrograms[ix.programID]:
 					lastProgram = ix
-				case lastProgram != nil:
+				case lastProgram != nil && v.sharesAccount(ix, lastProgram):
 					ix.parent = lastProgram
 				}
 				ix.depth = ix.parent.depth + 1
@@ -194,6 +197,17 @@ func (v *txView) buildInstructionTree() error {
 		}
 	}
 	return nil
+}
+
+// sharesAccount reports whether a and b reference a common account that is
+// not a signer.
+func (v *txView) sharesAccount(a, b *instruction) bool {
+	for _, x := range a.accounts {
+		if !v.signers[x] && slices.Contains(b.accounts, x) {
+			return true
+		}
+	}
+	return false
 }
 
 // indexTokenAccounts records mint and owner for every token account the
