@@ -9,6 +9,11 @@ import (
 // SwapInfo summarises the swap activity of a transaction from the trader's
 // point of view. For multi-hop or split routes, TokenIn is the route's first
 // input and TokenOut its final output; the individual hops are in Swaps.
+//
+// A transaction holding unrelated swaps (for example a buy followed by a
+// sell, or fills for several users) is still summarised as one route from
+// the first swap's input to the last swap's output; inspect Swaps to tell
+// them apart.
 type SwapInfo struct {
 	Signatures []solana.Signature
 	Signers    []solana.PublicKey
@@ -17,9 +22,9 @@ type SwapInfo struct {
 	// not report one.
 	Timestamp time.Time
 
-	// Trader is the wallet (or program-derived account) whose tokens were
-	// swapped. It is usually the fee payer, but differs for keeper-executed
-	// orders and custodial routers.
+	// Trader is the wallet whose tokens were swapped. It is usually the fee
+	// payer, but differs for relayer-paid and gasless swaps (the signing
+	// user) and keeper-filled DCA and limit orders (the order owner).
 	Trader solana.PublicKey
 
 	// AMMs lists the venues that executed the swaps, in execution order.
@@ -51,6 +56,8 @@ type SwapInfo struct {
 // InputAmount is what left the trader's side into the DEX instruction and
 // OutputAmount is what the DEX instruction paid out, so fees charged by the
 // DEX itself (LP, protocol and creator fees) are reflected in the amounts.
+// Amounts are as sent: Token-2022 transfer fees withheld from the recipient
+// are not deducted.
 type Swap struct {
 	// Protocol is the human-readable venue name, e.g. "Raydium CPMM".
 	Protocol  string
@@ -68,9 +75,11 @@ type Swap struct {
 	OutputDecimals uint8
 
 	// InstructionIndex is the index of the top-level instruction that
-	// contains the swap; InnerInstructionIndex is the index of the swap
+	// contains the swap; InnerInstructionIndex is the index of the decoded
 	// instruction within that instruction's inner instructions, or -1 when
-	// the swap is the top-level instruction itself.
+	// it is the top-level instruction itself. Hops decoded from an
+	// aggregator's events point at the aggregator instruction. Both are -1
+	// for swaps inferred from balance changes.
 	InstructionIndex      int
 	InnerInstructionIndex int
 }
@@ -82,12 +91,12 @@ const (
 	// FeeKindTip is a tip to a block-engine or transaction-landing service
 	// (Jito, Nozomi, bloXroute, ...).
 	FeeKindTip FeeKind = "tip"
-	// FeeKindPlatform is any other payment, typically a trading-bot,
-	// front-end or aggregator commission.
+	// FeeKindPlatform is any other payment made alongside a swap, typically
+	// a trading-bot, wallet-app or aggregator commission.
 	FeeKindPlatform FeeKind = "platform"
 )
 
-// Fee is a transfer from the trader that is not part of a swap.
+// Fee is a payment from the trader's side that is not part of a swap.
 type Fee struct {
 	Kind      FeeKind
 	Mint      solana.PublicKey

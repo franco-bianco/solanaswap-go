@@ -11,34 +11,36 @@ import (
 //
 // It walks the whole invocation tree, so swaps are found no matter which
 // trading bot, router or custom program wraps the DEX call. Each invocation
-// of a known DEX program is decoded into a Swap, preferably from the event
-// the program emits and otherwise from the token transfers it performs.
+// of a DEX program is decoded into Swaps, preferably from the events the
+// program emits and otherwise from the token transfers it performs.
 type extractor struct {
 	v *txView
 
 	// swapRoots are the outermost invocations of DEX programs: registered
-	// ones and unregistered programs detected by looksLikeSwap.
+	// ones and unregistered programs that behave like one (see
+	// collectSwapRoots). Every instruction below a swap root has swapRoot set.
 	swapRoots []*instruction
+	// unknownDEX marks swap roots of programs missing from the registry.
+	unknownDEX map[*instruction]bool
 	// userAuthorities are accounts that act on the user side of a swap: the
 	// transaction signers and every authority that moves tokens outside of a
 	// DEX invocation (routers and bots holding funds in transit). Pool
 	// authorities only ever sign transfers inside their own DEX program.
 	userAuthorities map[solana.PublicKey]bool
-
-	// unknownDEX marks swap roots of programs missing from the registry.
-	unknownDEX map[*instruction]bool
+	// swapDebited holds the accounts debited inside DEX invocations, i.e.
+	// staging accounts of a route rather than fee recipients.
+	swapDebited map[solana.PublicKey]bool
 
 	swaps   []Swap
 	routers []string
-	// consumed marks instructions whose transfers belong to a decoded swap.
-	consumed []*instruction
 }
 
 func newExtractor(v *txView) *extractor {
 	e := &extractor{
 		v:               v,
-		userAuthorities: make(map[solana.PublicKey]bool),
 		unknownDEX:      make(map[*instruction]bool),
+		userAuthorities: make(map[solana.PublicKey]bool),
+		swapDebited:     make(map[solana.PublicKey]bool),
 	}
 	for s := range v.signers {
 		e.userAuthorities[s] = true
@@ -46,10 +48,20 @@ func newExtractor(v *txView) *extractor {
 	for _, root := range v.roots {
 		e.collectSwapRoots(root, nil)
 	}
+	for _, root := range e.swapRoots {
+		root.swapRoot = root
+		root.walk(func(ix *instruction) bool {
+			ix.swapRoot = root
+			return true
+		})
+	}
 	for _, ix := range v.flat {
-		t, ok := v.decodeTransfer(ix)
-		if ok && !e.insideSwapRoot(ix) {
+		switch t := ix.transfer; {
+		case t == nil:
+		case ix.swapRoot == nil:
 			e.userAuthorities[t.authority] = true
+		default:
+			e.swapDebited[t.source] = true
 		}
 	}
 	return e
@@ -57,14 +69,17 @@ func newExtractor(v *txView) *extractor {
 
 // collectSwapRoots finds the DEX invocations in the subtree of ix. An
 // unregistered program counts as a DEX when an aggregator invokes it
-// directly (aggregators only call venues) or when it swaps with a signer.
+// directly (aggregators only call venues), or when it swaps with a signer
+// itself and has no registered program below it (otherwise it is a wrapper
+// such as a bot or custom router, and the DEX is further down).
 func (e *extractor) collectSwapRoots(ix, parent *instruction) {
 	spec, known := registry[ix.programID]
 	if known && spec.Kind == KindDEX {
 		e.swapRoots = append(e.swapRoots, ix)
 		return
 	}
-	if !known && !infrastructurePrograms[ix.programID] && (e.calledByAggregator(ix, parent) || e.looksLikeSwap(ix)) {
+	if !known && !infrastructurePrograms[ix.programID] &&
+		(e.calledByAggregator(ix, parent) || (!hasRegisteredDescendant(ix) && e.looksLikeSwap(ix))) {
 		e.swapRoots = append(e.swapRoots, ix)
 		e.unknownDEX[ix] = true
 		return
@@ -82,6 +97,17 @@ func (e *extractor) calledByAggregator(ix, parent *instruction) bool {
 	return ok && spec.Kind == KindAggregator
 }
 
+func hasRegisteredDescendant(ix *instruction) bool {
+	found := false
+	ix.walk(func(child *instruction) bool {
+		if _, ok := registry[child.programID]; ok {
+			found = true
+		}
+		return !found
+	})
+	return found
+}
+
 // looksLikeSwap reports whether an unrecognised program swaps directly with a
 // transaction signer: among the transfers it executes itself, the signer
 // pays one mint and receives another from an account the program controls.
@@ -90,8 +116,8 @@ func (e *extractor) looksLikeSwap(ix *instruction) bool {
 	paid := make(map[solana.PublicKey]bool)
 	var received []solana.PublicKey
 	for _, child := range ix.children {
-		t, ok := e.v.decodeTransfer(child)
-		if !ok || t.amount == 0 || t.mint.IsZero() {
+		t := child.transfer
+		if t == nil || t.mint.IsZero() {
 			continue
 		}
 		fromSigner := e.v.signers[t.authority]
@@ -113,10 +139,6 @@ func (e *extractor) looksLikeSwap(ix *instruction) bool {
 	return false
 }
 
-func (e *extractor) insideSwapRoot(ix *instruction) bool {
-	return slices.ContainsFunc(e.swapRoots, ix.within)
-}
-
 // run decodes all swaps in execution order.
 func (e *extractor) run() {
 	for _, root := range e.v.roots {
@@ -133,24 +155,12 @@ func (e *extractor) visit(ix *instruction) {
 	if known && spec.decode != nil {
 		if swaps := spec.decode(e, ix); len(swaps) > 0 {
 			e.emit(ix, swaps...)
-			if spec.Kind == KindDEX {
-				e.consumed = append(e.consumed, ix)
-			} else {
-				// An aggregator's events cover the DEX invocations it makes;
-				// its own transfers (fees, staging) are not part of a swap.
-				for _, child := range ix.children {
-					if child.programID != ix.programID && !infrastructurePrograms[child.programID] {
-						e.consumed = append(e.consumed, child)
-					}
-				}
-			}
 			return
 		}
 	}
-	if (known && spec.Kind == KindDEX) || e.unknownDEX[ix] {
+	if ix.swapRoot == ix {
 		if s, ok := e.transferSwap(ix, protocolName(ix.programID)); ok {
 			e.emit(ix, s)
-			e.consumed = append(e.consumed, ix)
 		}
 		return
 	}
@@ -199,7 +209,7 @@ func (e *extractor) trader() solana.PublicKey {
 		return cmp.Or(first, e.v.feePayer())
 	}
 	for _, ix := range e.v.flat {
-		if t, ok := e.v.decodeTransfer(ix); ok && e.v.signers[t.authority] && e.v.ownerOf(t.destination) == first {
+		if t := ix.transfer; t != nil && e.v.signers[t.authority] && e.v.ownerOf(t.destination) == first {
 			return t.authority
 		}
 	}
@@ -245,13 +255,8 @@ func (e *extractor) isUserSide(account solana.PublicKey) bool {
 // or referral fees) count towards the input, because the DEX charges them as
 // part of the swap.
 func (e *extractor) transferSwap(ix *instruction, protocol string) (Swap, bool) {
-	transfers := e.v.subtreeTransfers(ix)
-	if len(transfers) < 2 {
-		return Swap{}, false
-	}
-
 	var inputs, outputs []transfer
-	for _, t := range transfers {
+	for _, t := range e.v.subtreeTransfers(ix) {
 		fromUser := e.isUserSide(t.authority)
 		toUser := e.isUserSide(t.destination)
 		switch {
@@ -261,8 +266,8 @@ func (e *extractor) transferSwap(ix *instruction, protocol string) (Swap, bool) 
 			outputs = append(outputs, t)
 		}
 	}
-	inMint, inAmount := dominantMint(inputs, solana.PublicKey{})
-	outMint, outAmount := dominantMint(outputs, inMint)
+	inMint, inAmount := e.dominantMint(inputs, solana.PublicKey{})
+	outMint, outAmount := e.dominantMint(outputs, inMint)
 	if inMint.IsZero() || outMint.IsZero() || inAmount == 0 || outAmount == 0 {
 		return Swap{}, false
 	}
@@ -277,13 +282,16 @@ func (e *extractor) transferSwap(ix *instruction, protocol string) (Swap, bool) 
 	}, true
 }
 
-// dominantMint sums transfers per mint and returns the mint with the largest
-// number of transfers (ties broken by first appearance), skipping exclude.
-// Swaps move one mint per side; extra mints are rare dust or rebates.
-func dominantMint(transfers []transfer, exclude solana.PublicKey) (solana.PublicKey, uint64) {
+// dominantMint picks the mint a swap side trades and sums its transfers,
+// skipping exclude. A swap moves one mint per side; when several appear,
+// token-account transfers win over plain SOL transfers between system
+// accounts (rent top-ups, small fees), then the mint with more transfers,
+// then the mint seen first.
+func (e *extractor) dominantMint(transfers []transfer, exclude solana.PublicKey) (solana.PublicKey, uint64) {
 	type total struct {
 		amount uint64
 		count  int
+		token  bool // moved into or out of a token account
 	}
 	totals := make(map[solana.PublicKey]*total)
 	var order []solana.PublicKey
@@ -295,12 +303,21 @@ func dominantMint(transfers []transfer, exclude solana.PublicKey) (solana.Public
 			totals[t.mint] = &total{}
 			order = append(order, t.mint)
 		}
-		totals[t.mint].amount += t.amount
-		totals[t.mint].count++
+		tot := totals[t.mint]
+		tot.amount += t.amount
+		tot.count++
+		_, src := e.v.tokenAccounts[t.source]
+		_, dst := e.v.tokenAccounts[t.destination]
+		tot.token = tot.token || src || dst
 	}
 	var best solana.PublicKey
 	for _, m := range order {
-		if best.IsZero() || totals[m].count > totals[best].count {
+		if best.IsZero() {
+			best = m
+			continue
+		}
+		a, b := totals[m], totals[best]
+		if (a.token && !b.token) || (a.token == b.token && a.count > b.count) {
 			best = m
 		}
 	}

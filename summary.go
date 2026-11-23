@@ -55,47 +55,61 @@ func netOr(a, b, fallback uint64) uint64 {
 }
 
 // collectFees returns payments from the user side (the trader, or a router
-// holding the trader's funds in transit) made outside of any swap
-// instruction to accounts outside the user side: trading-bot and aggregator
-// fees, and tips.
+// holding the trader's funds in transit) to accounts outside the user side
+// that are not part of any DEX invocation: trading-bot and aggregator fees,
+// and tips. To keep unrelated activity out (deposits into other protocols),
+// a payment must be a top-level instruction, made by a registered bot or
+// aggregator program, or made inside a program call that also performs a
+// swap.
 func (e *extractor) collectFees() []Fee {
 	var fees []Fee
 	for _, ix := range e.v.flat {
-		t, ok := e.v.decodeTransfer(ix)
-		if !ok || t.amount == 0 || e.isConsumed(ix) || !e.isUserSide(t.authority) {
+		t := ix.transfer
+		if t == nil || ix.swapRoot != nil || !e.isUserSide(t.authority) {
+			continue
+		}
+		if e.isUserSide(t.destination) || e.swapDebited[t.destination] || !e.besideSwap(ix) {
 			continue
 		}
 		recipient := e.v.ownerOf(t.destination)
-		if e.isUserSide(t.destination) || e.feedsSwap(t.destination) {
-			continue
-		}
 		kind := FeeKindPlatform
 		if tipAccounts[recipient] {
 			kind = FeeKindTip
-		}
-		if bot, ok := botFeeWallets[recipient]; ok {
-			e.addRouter(bot)
 		}
 		fees = append(fees, Fee{Kind: kind, Mint: t.mint, Amount: t.amount, Recipient: recipient})
 	}
 	return fees
 }
 
-func (e *extractor) isConsumed(ix *instruction) bool {
-	return slices.ContainsFunc(e.consumed, ix.within)
+// besideSwap reports whether a transfer instruction is top-level, made by a
+// registered bot or aggregator, or made by a program whose invocation also
+// contains a swap.
+func (e *extractor) besideSwap(ix *instruction) bool {
+	caller := ix.parent
+	for caller != nil && infrastructurePrograms[caller.programID] {
+		caller = caller.parent
+	}
+	if caller == nil {
+		return true
+	}
+	if _, ok := registry[caller.programID]; ok {
+		return true
+	}
+	found := false
+	caller.walk(func(n *instruction) bool {
+		found = found || n.swapRoot != nil
+		return !found
+	})
+	return found
 }
 
-// feedsSwap reports whether account is debited inside a decoded swap, i.e.
-// it is a staging account used by the swap rather than a fee recipient.
-func (e *extractor) feedsSwap(account solana.PublicKey) bool {
-	for _, root := range e.consumed {
-		for _, t := range e.v.subtreeTransfers(root) {
-			if t.source == account {
-				return true
-			}
+// labelBots adds the trading bots whose fee wallets received fees.
+func (e *extractor) labelBots(fees []Fee) {
+	for _, f := range fees {
+		if bot, ok := botFeeWallets[f.Recipient]; ok {
+			e.addRouter(bot)
 		}
 	}
-	return false
 }
 
 // balanceSwap infers a swap from the trader's balance changes. It is the

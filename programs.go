@@ -33,6 +33,9 @@ func (k ProgramKind) String() string {
 	return "unknown"
 }
 
+// MarshalText implements encoding.TextMarshaler.
+func (k ProgramKind) MarshalText() ([]byte, error) { return []byte(k.String()), nil }
+
 // Program describes a recognised on-chain program.
 type Program struct {
 	Name string
@@ -51,16 +54,18 @@ type programSpec struct {
 	decode swapDecoder
 }
 
-// Program IDs that have dedicated handling.
+// Program IDs with dedicated handling. Use LookupProgram and Programs to
+// inspect the registry.
 var (
-	PumpFunProgramID          = solana.MustPublicKeyFromBase58("6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P")
-	PumpSwapProgramID         = solana.MustPublicKeyFromBase58("pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA")
-	MoonshotProgramID         = solana.MustPublicKeyFromBase58("MoonCVVNZFSYkqNXP6bxHLPL6QQJiMagDL3qcqUQTrG")
-	RaydiumLaunchLabProgramID = solana.MustPublicKeyFromBase58("LanMV9sAd7wArD4vJFi2qDdfnVhFxYSUg6eADduJ3uj")
-	JupiterV6ProgramID        = solana.MustPublicKeyFromBase58("JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4")
-	JupiterOrderEngineID      = solana.MustPublicKeyFromBase58("61DFfeTKM7trxYcPQCM78bJ794ddZprZpAwAnLiwTpYH")
-	JupiterRecurringProgramID = solana.MustPublicKeyFromBase58("DCA265Vj8a9CEuX1eb1LWRnDT7uK6q1xMipnNyatn23M")
-	DFlowProgramID            = solana.MustPublicKeyFromBase58("DF1ow4tspfHX9JwWJsAb9epbkA8hmpSEAtxXy1V27QBH")
+	pumpFunProgramID          = solana.MustPublicKeyFromBase58("6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P")
+	pumpSwapProgramID         = solana.MustPublicKeyFromBase58("pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA")
+	moonshotProgramID         = solana.MustPublicKeyFromBase58("MoonCVVNZFSYkqNXP6bxHLPL6QQJiMagDL3qcqUQTrG")
+	raydiumLaunchLabProgramID = solana.MustPublicKeyFromBase58("LanMV9sAd7wArD4vJFi2qDdfnVhFxYSUg6eADduJ3uj")
+	jupiterV6ProgramID        = solana.MustPublicKeyFromBase58("JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4")
+	jupiterOrderEngineID      = solana.MustPublicKeyFromBase58("61DFfeTKM7trxYcPQCM78bJ794ddZprZpAwAnLiwTpYH")
+	jupiterRecurringProgramID = solana.MustPublicKeyFromBase58("DCA265Vj8a9CEuX1eb1LWRnDT7uK6q1xMipnNyatn23M")
+	jupiterTriggerProgramID   = solana.MustPublicKeyFromBase58("j1o2qRpjcyUwEvwtcfhEQefh773ZgjxcVRry7LDqg5X")
+	dFlowProgramID            = solana.MustPublicKeyFromBase58("DF1ow4tspfHX9JwWJsAb9epbkA8hmpSEAtxXy1V27QBH")
 )
 
 // registry lists the recognised programs. Program IDs were verified on
@@ -68,10 +73,10 @@ var (
 // programs are kept so historical transactions stay labelled.
 var registry = newRegistry(
 	// Launchpads and bonding curves.
-	programSpec{Program{"Pump.fun", PumpFunProgramID, KindDEX}, decodePumpFun},
-	programSpec{Program{"PumpSwap", PumpSwapProgramID, KindDEX}, decodePumpSwap},
-	programSpec{Program{"Moonshot", MoonshotProgramID, KindDEX}, decodeMoonshot},
-	programSpec{Program{"Raydium LaunchLab", RaydiumLaunchLabProgramID, KindDEX}, nil},
+	programSpec{Program{"Pump.fun", pumpFunProgramID, KindDEX}, decodePumpFun},
+	programSpec{Program{"PumpSwap", pumpSwapProgramID, KindDEX}, decodePumpSwap},
+	programSpec{Program{"Moonshot", moonshotProgramID, KindDEX}, decodeMoonshot},
+	programSpec{Program{"Raydium LaunchLab", raydiumLaunchLabProgramID, KindDEX}, nil},
 	dex("Meteora DBC", "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN"),
 	dex("Boop.fun", "boop8hVGQGqehUK2iVEMEnMrL5RbjywRzHKBmBE7ry4"),
 	dex("Heaven", "HEAVENoP2qxoeuF8Dj2oT1GHEnu49U5mJYkdeC8BAX2o"),
@@ -131,19 +136,21 @@ var registry = newRegistry(
 	dex("Obsidian", "HBVw6bZtcCaezhcBrmfyXBSBRWCdv72271xQ4GPvms2z"),
 	dex("Riptide", "riptK81hDxhe5pW5jSzSM9iRA8azgEgLJ4dXkPtBS7j"),
 	dex("Denali", "DNL1tgEj3nJovHw9jtyCCQD3arssCJzkmpDizknwzey4"),
-	programSpec{Program{"Jupiter RFQ", JupiterOrderEngineID, KindDEX}, decodeJupiterRFQ},
+	programSpec{Program{"Jupiter RFQ", jupiterOrderEngineID, KindDEX}, decodeJupiterRFQ},
 
 	// Aggregators and order programs.
-	programSpec{Program{"Jupiter", JupiterV6ProgramID, KindAggregator}, decodeSwapEvents},
-	programSpec{Program{"DFlow", DFlowProgramID, KindAggregator}, decodeSwapEvents},
+	programSpec{Program{"Jupiter", jupiterV6ProgramID, KindAggregator}, decodeSwapEvents},
+	programSpec{Program{"DFlow", dFlowProgramID, KindAggregator}, decodeSwapEvents},
 	aggregator("OKX DEX Router v2", "proVF4pMXVaYqmy4NjniPh4pqKNfMmsihgd4wdkCX3u"),
 	aggregator("OKX DEX Router", "6m2CDdhRgxpH4WjvdzxAYbGxwdGUz5MziiL5jek2kBma"), // closed 2026-07
 	aggregator("Titan", "T1TANpTeScyeqVzzgNViGDNrkQ6qHz9KrSBS4aNXvGT"),
 	aggregator("Raydium Router", "routeUGWgWzqBWFcrCfv8tritsqukccJPu3q5GPP3xS"),
-	orderProgram("Jupiter Recurring", "DCA265Vj8a9CEuX1eb1LWRnDT7uK6q1xMipnNyatn23M"),
-	orderProgram("Jupiter DCA", "DCAK36VfExkPdAkYUQg6ewgxyinvcEyPLyHjRbmveKFw"), // retired
-	programSpec{Program: Program{"Jupiter Trigger", JupiterTriggerProgramID, KindAggregator}},
-	orderProgram("Jupiter Limit Order", "jupoNjAxXgZ4rjzxzPMP4oxduvQsQtZzyknqvzYNrNu"),
+	// Keeper-filled order programs swap through an aggregator on the
+	// order owner's behalf.
+	programSpec{Program: Program{"Jupiter Recurring", jupiterRecurringProgramID, KindAggregator}},
+	aggregator("Jupiter DCA", "DCAK36VfExkPdAkYUQg6ewgxyinvcEyPLyHjRbmveKFw"), // retired
+	programSpec{Program: Program{"Jupiter Trigger", jupiterTriggerProgramID, KindAggregator}},
+	aggregator("Jupiter Limit Order", "jupoNjAxXgZ4rjzxzPMP4oxduvQsQtZzyknqvzYNrNu"),
 
 	// Trading bots. Several bots only charge their fee through these
 	// programs and call the DEX directly; see also botFeeWallets.
@@ -168,12 +175,6 @@ func dex(name, id string) programSpec {
 }
 
 func aggregator(name, id string) programSpec {
-	return programSpec{Program: Program{name, solana.MustPublicKeyFromBase58(id), KindAggregator}}
-}
-
-// orderProgram registers a keeper-filled order program (DCA, limit
-// orders). Its fills swap through an aggregator on the owner's behalf.
-func orderProgram(name, id string) programSpec {
 	return programSpec{Program: Program{name, solana.MustPublicKeyFromBase58(id), KindAggregator}}
 }
 
@@ -206,7 +207,7 @@ func Programs() []Program {
 		out = append(out, s.Program)
 	}
 	slices.SortFunc(out, func(a, b Program) int {
-		return cmp.Or(cmp.Compare(a.Kind, b.Kind), cmp.Compare(a.Name, b.Name))
+		return cmp.Or(cmp.Compare(a.Kind, b.Kind), cmp.Compare(a.Name, b.Name), cmp.Compare(a.ID.String(), b.ID.String()))
 	})
 	return out
 }

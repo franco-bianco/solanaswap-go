@@ -33,7 +33,6 @@ func isTokenProgram(id solana.PublicKey) bool {
 // transfer is a token or native SOL movement decoded from an instruction.
 // Native SOL transfers use the wrapped SOL mint.
 type transfer struct {
-	ix          *instruction
 	mint        solana.PublicKey // zero when the mint cannot be determined
 	amount      uint64
 	source      solana.PublicKey
@@ -58,7 +57,7 @@ func (v *txView) decodeTokenTransfer(ix *instruction) (transfer, bool) {
 	if len(d) == 0 {
 		return transfer{}, false
 	}
-	t := transfer{ix: ix}
+	var t transfer
 	switch {
 	case d[0] == tokenIxTransfer && len(d) >= 9 && len(ix.accounts) >= 3:
 		t.amount = binary.LittleEndian.Uint64(d[1:9])
@@ -86,7 +85,7 @@ func decodeSystemTransfer(ix *instruction) (transfer, bool) {
 	if len(d) < 12 {
 		return transfer{}, false
 	}
-	t := transfer{ix: ix, mint: solana.WrappedSol}
+	t := transfer{mint: solana.WrappedSol}
 	switch tag := binary.LittleEndian.Uint32(d[:4]); {
 	case tag == systemIxTransfer && len(ix.accounts) >= 2:
 		t.amount = binary.LittleEndian.Uint64(d[4:12])
@@ -105,8 +104,8 @@ func decodeSystemTransfer(ix *instruction) (transfer, bool) {
 func (v *txView) subtreeTransfers(root *instruction) []transfer {
 	var out []transfer
 	root.walk(func(ix *instruction) bool {
-		if t, ok := v.decodeTransfer(ix); ok && t.amount > 0 {
-			out = append(out, t)
+		if ix.transfer != nil {
+			out = append(out, *ix.transfer)
 		}
 		return true
 	})

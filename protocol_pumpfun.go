@@ -55,19 +55,18 @@ func parsePumpFunTrade(data []byte) (pumpFunTrade, bool) {
 	}
 	t.hasFees = true
 
-	r.bool()   // track_volume
-	r.u64()    // total_unclaimed_tokens
-	r.u64()    // total_claimed_tokens
-	r.u64()    // current_sol_volume
-	r.i64()    // last_update_timestamp
-	r.string() // ix_name
-	r.bool()   // mayhem_mode
-	r.u64()    // cashback_fee_basis_points
-	r.u64()    // cashback
-	r.u64()    // buyback_fee_basis_points
-	r.u64()    // buyback_fee (part of fee)
-	shareholders := r.u32()
-	r.skip(int(shareholders) * (32 + 2)) // address, share_bps
+	r.bool()              // track_volume
+	r.u64()               // total_unclaimed_tokens
+	r.u64()               // total_claimed_tokens
+	r.u64()               // current_sol_volume
+	r.i64()               // last_update_timestamp
+	r.string()            // ix_name
+	r.bool()              // mayhem_mode
+	r.u64()               // cashback_fee_basis_points
+	r.u64()               // cashback
+	r.u64()               // buyback_fee_basis_points
+	r.u64()               // buyback_fee (part of fee)
+	r.skip(r.u32(), 32+2) // shareholders: address, share_bps
 	quoteMint := r.pubkey()
 	quoteAmount := r.u64()
 	if r.ok {

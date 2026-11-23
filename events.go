@@ -51,7 +51,7 @@ type borshReader struct {
 func newBorshReader(b []byte) *borshReader { return &borshReader{buf: b, ok: true} }
 
 func (r *borshReader) take(n int) []byte {
-	if !r.ok || len(r.buf) < n {
+	if !r.ok || n < 0 || len(r.buf) < n {
 		r.ok = false
 		return nil
 	}
@@ -85,7 +85,14 @@ func (r *borshReader) u64() uint64 {
 
 func (r *borshReader) i64() int64 { return int64(r.u64()) }
 
-func (r *borshReader) skip(n int) { r.take(n) }
+// skip discards count elements of size bytes each.
+func (r *borshReader) skip(count uint32, size int) {
+	if uint64(count)*uint64(size) > uint64(len(r.buf)) {
+		r.ok = false
+		return
+	}
+	r.take(int(count) * size)
+}
 
 func (r *borshReader) pubkey() solana.PublicKey {
 	if b := r.take(32); b != nil {
@@ -115,34 +122,59 @@ func (v *txView) mapLogEvents() {
 	var stack []*instruction
 	next := 0
 	for _, line := range v.meta.LogMessages {
-		switch {
-		case strings.HasPrefix(line, "Program data: ") && len(stack) > 0:
-			for chunk := range strings.FieldsSeq(strings.TrimPrefix(line, "Program data: ")) {
-				if data, err := base64.StdEncoding.DecodeString(chunk); err == nil {
-					top := stack[len(stack)-1]
-					events[top] = append(events[top], data)
+		if payload, ok := strings.CutPrefix(line, "Program data: "); ok {
+			if len(stack) > 0 {
+				for chunk := range strings.FieldsSeq(payload) {
+					if data, err := base64.StdEncoding.DecodeString(chunk); err == nil {
+						top := stack[len(stack)-1]
+						events[top] = append(events[top], data)
+					}
 				}
 			}
-		case strings.HasPrefix(line, "Program ") && strings.Contains(line, " invoke ["):
-			program := strings.Fields(line)[1]
+			continue
+		}
+		if strings.HasPrefix(line, "Log truncated") {
+			return
+		}
+		program, kind, ok := parseLogFrame(line)
+		switch {
+		case !ok:
+		case kind == "invoke":
 			// Precompiles run without logging an invocation.
-			for next < len(v.flat) && precompiles[v.flat[next].programID] && v.flat[next].programID.String() != program {
+			for next < len(v.flat) && precompiles[v.flat[next].programID] && v.flat[next].programID != program {
 				next++
 			}
-			if next >= len(v.flat) || v.flat[next].programID.String() != program {
+			if next >= len(v.flat) || v.flat[next].programID != program {
 				return
 			}
 			stack = append(stack, v.flat[next])
 			next++
-		case strings.HasPrefix(line, "Program ") && (strings.HasSuffix(line, " success") || strings.Contains(line, " failed")):
-			if len(stack) > 0 {
-				stack = stack[:len(stack)-1]
-			}
-		case strings.HasPrefix(line, "Log truncated"):
-			return
+		case len(stack) > 0: // success or failed
+			stack = stack[:len(stack)-1]
 		}
 	}
 	v.logEvents = events
+}
+
+// parseLogFrame parses the invocation lines the runtime logs:
+// "Program <id> invoke [<depth>]", "Program <id> success" and
+// "Program <id> failed: <reason>". Program-written lines ("Program log: ...")
+// and other runtime lines (consumed, return) are not frames.
+func parseLogFrame(line string) (program solana.PublicKey, kind string, ok bool) {
+	f := strings.Fields(line)
+	if len(f) < 3 || f[0] != "Program" {
+		return program, "", false
+	}
+	switch f[2] {
+	case "invoke", "success", "failed:":
+	default:
+		return program, "", false
+	}
+	program, err := solana.PublicKeyFromBase58(f[1])
+	if err != nil {
+		return program, "", false
+	}
+	return program, strings.TrimSuffix(f[2], ":"), true
 }
 
 // precompiles are native programs that execute without "invoke" log lines.

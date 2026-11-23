@@ -112,7 +112,6 @@ func TestDecodeTransfer(t *testing.T) {
 			if !ok {
 				t.Fatal("not decoded")
 			}
-			got.ix = nil
 			if got != tt.want {
 				t.Fatalf("got %+v, want %+v", got, tt.want)
 			}

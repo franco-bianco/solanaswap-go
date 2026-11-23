@@ -107,7 +107,9 @@ Other entry points:
 
 Amounts are raw integer token amounts; divide by `10^decimals` for display.
 Native SOL and wrapped SOL are both reported as
-`So11111111111111111111111111111111111111112`.
+`So11111111111111111111111111111111111111112`. The JSON uses Go field names
+as in v1, and amounts are JSON numbers that can exceed 2^53, so decode them
+with a 64-bit-safe parser outside Go.
 
 What the amounts mean:
 
@@ -145,10 +147,16 @@ blocks some clients; use your own RPC provider for anything beyond a quick test.
      transfers they execute. Transfers signed by the trader (or by a router
      holding the trader's funds) are the input; transfers paying out to the
      trader's side are the output.
-4. Programs that are not in the registry but swap directly with a signer are
-   detected from their transfers and reported by program ID.
-5. If no swap instruction is found at all, the trader's balance changes are
+4. Programs that are not in the registry are treated as venues when an
+   aggregator calls them, or when they swap directly with a signer and wrap
+   no recognised program; they are reported by program ID.
+5. If no swap instruction is found at all, the signers' balance changes are
    used, corrected for the network fee, tips, bot fees and account rent.
+
+Limitations: a transaction with several unrelated swaps is summarised as one
+route (see `Swaps` for the parts), amounts are gross of Token-2022 transfer
+fees, and bots that charge fees through unregistered programs are not
+labelled.
 
 ## Supported programs
 

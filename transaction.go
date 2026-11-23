@@ -2,6 +2,7 @@ package solanaswap
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 
 	"github.com/gagliardetto/solana-go"
@@ -21,6 +22,11 @@ type instruction struct {
 
 	parent   *instruction
 	children []*instruction
+
+	// transfer is the token or SOL movement this instruction performs, if any.
+	transfer *transfer
+	// swapRoot is the DEX invocation this instruction belongs to, if any.
+	swapRoot *instruction
 }
 
 // account returns the i-th account of the instruction, or the zero key when
@@ -42,16 +48,6 @@ func (ix *instruction) walk(fn func(*instruction) bool) {
 	}
 }
 
-// within reports whether ix is root or one of its descendants.
-func (ix *instruction) within(root *instruction) bool {
-	for n := ix; n != nil; n = n.parent {
-		if n == root {
-			return true
-		}
-	}
-	return false
-}
-
 // tokenAccount describes an SPL token account seen in the transaction.
 type tokenAccount struct {
 	mint  solana.PublicKey
@@ -63,8 +59,10 @@ type txView struct {
 	tx   *solana.Transaction
 	meta *rpc.TransactionMeta
 
-	keys    solana.PublicKeySlice
-	signers map[solana.PublicKey]bool
+	keys       solana.PublicKeySlice
+	keyIndex   map[solana.PublicKey]int
+	signers    map[solana.PublicKey]bool
+	numSigners int
 
 	roots []*instruction // top-level instructions
 	flat  []*instruction // all instructions in execution order
@@ -95,25 +93,38 @@ func newTxView(tx *solana.Transaction, meta *rpc.TransactionMeta) (*txView, erro
 		tx:            tx,
 		meta:          meta,
 		keys:          keys,
+		keyIndex:      make(map[solana.PublicKey]int, len(keys)),
 		signers:       make(map[solana.PublicKey]bool),
+		numSigners:    min(int(tx.Message.Header.NumRequiredSignatures), len(tx.Message.AccountKeys)),
 		tokenAccounts: make(map[solana.PublicKey]tokenAccount),
 		decimals:      map[solana.PublicKey]uint8{solana.WrappedSol: 9},
 	}
-	for i := range min(int(tx.Message.Header.NumRequiredSignatures), len(tx.Message.AccountKeys)) {
-		v.signers[tx.Message.AccountKeys[i]] = true
+	for i, k := range keys {
+		if _, dup := v.keyIndex[k]; !dup {
+			v.keyIndex[k] = i
+		}
+	}
+	for _, s := range tx.Message.AccountKeys[:v.numSigners] {
+		v.signers[s] = true
 	}
 
 	if err := v.buildInstructionTree(); err != nil {
 		return nil, err
 	}
 	v.indexTokenAccounts()
+	for _, ix := range v.flat {
+		if t, ok := v.decodeTransfer(ix); ok && t.amount > 0 {
+			ix.transfer = &t
+		}
+	}
 	v.mapLogEvents()
 	return v, nil
 }
 
 func (v *txView) key(index uint16) (solana.PublicKey, error) {
 	if int(index) >= len(v.keys) {
-		return solana.PublicKey{}, fmt.Errorf("%w: account index %d out of range (%d keys)", ErrInvalidTransaction, index, len(v.keys))
+		return solana.PublicKey{}, fmt.Errorf("%w: account index %d out of range (%d keys; v0 transactions need meta.LoadedAddresses)",
+			ErrInvalidTransaction, index, len(v.keys))
 	}
 	return v.keys[index], nil
 }
@@ -150,22 +161,35 @@ func (v *txView) buildInstructionTree() error {
 		v.flat = append(v.flat, root)
 
 		stack := []*instruction{root}
+		var lastProgram *instruction // latest non-infrastructure inner instruction
 		for j, in := range inner[i] {
 			ix, err := v.newInstruction(in.ProgramIDIndex, in.Accounts, in.Data)
 			if err != nil {
 				return err
 			}
 			ix.outerIndex, ix.innerIndex = i, j
-			// Transactions recorded before stack heights were tracked report 0;
-			// treat those as direct children of the top-level instruction.
-			ix.depth = max(int(in.StackHeight), 2)
 
-			for len(stack) > 1 && stack[len(stack)-1].depth >= ix.depth {
-				stack = stack[:len(stack)-1]
+			if in.StackHeight == 0 {
+				// Nodes did not record stack heights before 2023. Assume
+				// token and system instructions belong to the most recent
+				// program invocation and other programs to the top level.
+				ix.parent = root
+				switch {
+				case !infrastructurePrograms[ix.programID]:
+					lastProgram = ix
+				case lastProgram != nil:
+					ix.parent = lastProgram
+				}
+				ix.depth = ix.parent.depth + 1
+			} else {
+				ix.depth = int(in.StackHeight)
+				for len(stack) > 1 && stack[len(stack)-1].depth >= ix.depth {
+					stack = stack[:len(stack)-1]
+				}
+				ix.parent = stack[len(stack)-1]
+				stack = append(stack, ix)
 			}
-			ix.parent = stack[len(stack)-1]
 			ix.parent.children = append(ix.parent.children, ix)
-			stack = append(stack, ix)
 			v.flat = append(v.flat, ix)
 		}
 	}
@@ -257,72 +281,95 @@ func (v *txView) feePayer() solana.PublicKey {
 
 // signerList returns the transaction's signers in account order.
 func (v *txView) signerList() []solana.PublicKey {
-	n := min(int(v.tx.Message.Header.NumRequiredSignatures), len(v.tx.Message.AccountKeys))
-	return append([]solana.PublicKey(nil), v.tx.Message.AccountKeys[:n]...)
+	return append([]solana.PublicKey(nil), v.tx.Message.AccountKeys[:v.numSigners]...)
+}
+
+// tokenDeltas returns post-pre raw token balance changes keyed by
+// (owner, mint) for the token accounts accepted by keep.
+func (v *txView) tokenDeltas(keep func(owner, mint solana.PublicKey) bool) map[[2]solana.PublicKey]int64 {
+	type sums struct{ pre, post uint64 }
+	totals := make(map[[2]solana.PublicKey]*sums)
+	add := func(balances []rpc.TokenBalance, post bool) {
+		for _, b := range balances {
+			if b.UiTokenAmount == nil || int(b.AccountIndex) >= len(v.keys) {
+				continue
+			}
+			owner := v.ownerOf(v.keys[b.AccountIndex])
+			if !keep(owner, b.Mint) {
+				continue
+			}
+			amount, err := strconv.ParseUint(b.UiTokenAmount.Amount, 10, 64)
+			if err != nil {
+				continue
+			}
+			k := [2]solana.PublicKey{owner, b.Mint}
+			if totals[k] == nil {
+				totals[k] = &sums{}
+			}
+			if post {
+				totals[k].post += amount
+			} else {
+				totals[k].pre += amount
+			}
+		}
+	}
+	add(v.meta.PreTokenBalances, false)
+	add(v.meta.PostTokenBalances, true)
+
+	delta := make(map[[2]solana.PublicKey]int64, len(totals))
+	for k, s := range totals {
+		delta[k] = signedDiff(s.post, s.pre)
+	}
+	return delta
+}
+
+// signedDiff returns a-b clamped to the int64 range.
+func signedDiff(a, b uint64) int64 {
+	if a >= b {
+		return int64(min(a-b, math.MaxInt64))
+	}
+	return -int64(min(b-a, math.MaxInt64))
 }
 
 // tokenBalanceDelta returns post-pre raw token balance changes per mint for
 // all token accounts owned by owner.
 func (v *txView) tokenBalanceDelta(owner solana.PublicKey) map[solana.PublicKey]int64 {
-	delta := make(map[solana.PublicKey]int64)
-	add := func(balances []rpc.TokenBalance, sign int64) {
-		for _, b := range balances {
-			if b.UiTokenAmount == nil || int(b.AccountIndex) >= len(v.keys) {
-				continue
-			}
-			if v.ownerOf(v.keys[b.AccountIndex]) != owner {
-				continue
-			}
-			amount, err := strconv.ParseInt(b.UiTokenAmount.Amount, 10, 64)
-			if err != nil {
-				continue
-			}
-			delta[b.Mint] += sign * amount
-		}
+	out := make(map[solana.PublicKey]int64)
+	for k, d := range v.tokenDeltas(func(o, _ solana.PublicKey) bool { return o == owner }) {
+		out[k[1]] += d
 	}
-	add(v.meta.PreTokenBalances, -1)
-	add(v.meta.PostTokenBalances, 1)
-	return delta
+	return out
 }
 
 // ownerDeltas returns post-pre raw balance changes of mint per owner.
 func (v *txView) ownerDeltas(mint solana.PublicKey) map[solana.PublicKey]int64 {
-	delta := make(map[solana.PublicKey]int64)
-	add := func(balances []rpc.TokenBalance, sign int64) {
-		for _, b := range balances {
-			if b.Mint != mint || b.UiTokenAmount == nil || int(b.AccountIndex) >= len(v.keys) {
-				continue
-			}
-			amount, err := strconv.ParseInt(b.UiTokenAmount.Amount, 10, 64)
-			if err != nil {
-				continue
-			}
-			delta[v.ownerOf(v.keys[b.AccountIndex])] += sign * amount
-		}
+	out := make(map[solana.PublicKey]int64)
+	for k, d := range v.tokenDeltas(func(_, m solana.PublicKey) bool { return m == mint }) {
+		out[k[0]] += d
 	}
-	add(v.meta.PreTokenBalances, -1)
-	add(v.meta.PostTokenBalances, 1)
-	return delta
+	return out
+}
+
+// preLamports and postLamports return the lamports held by addr before and
+// after the transaction.
+func (v *txView) preLamports(addr solana.PublicKey) uint64 {
+	return lamportsAt(v.meta.PreBalances, v.keyIndex, addr)
+}
+
+func (v *txView) postLamports(addr solana.PublicKey) uint64 {
+	return lamportsAt(v.meta.PostBalances, v.keyIndex, addr)
+}
+
+func lamportsAt(balances []uint64, index map[solana.PublicKey]int, addr solana.PublicKey) uint64 {
+	if i, ok := index[addr]; ok && i < len(balances) {
+		return balances[i]
+	}
+	return 0
 }
 
 // lamportDelta returns post-pre lamports of the account at addr.
 func (v *txView) lamportDelta(addr solana.PublicKey) int64 {
-	for i, k := range v.keys {
-		if k == addr && i < len(v.meta.PreBalances) && i < len(v.meta.PostBalances) {
-			return int64(v.meta.PostBalances[i]) - int64(v.meta.PreBalances[i])
-		}
-	}
-	return 0
-}
-
-// postLamports returns the lamports held by addr after the transaction.
-func (v *txView) postLamports(addr solana.PublicKey) uint64 {
-	for i, k := range v.keys {
-		if k == addr && i < len(v.meta.PostBalances) {
-			return v.meta.PostBalances[i]
-		}
-	}
-	return 0
+	return signedDiff(v.postLamports(addr), v.preLamports(addr))
 }
 
 // preTokenAmount returns the raw token balance of addr before the transaction.
@@ -331,16 +378,6 @@ func (v *txView) preTokenAmount(addr solana.PublicKey) uint64 {
 		if int(b.AccountIndex) < len(v.keys) && v.keys[b.AccountIndex] == addr && b.UiTokenAmount != nil {
 			n, _ := strconv.ParseUint(b.UiTokenAmount.Amount, 10, 64)
 			return n
-		}
-	}
-	return 0
-}
-
-// preLamports returns the lamports held by addr before the transaction.
-func (v *txView) preLamports(addr solana.PublicKey) uint64 {
-	for i, k := range v.keys {
-		if k == addr && i < len(v.meta.PreBalances) {
-			return v.meta.PreBalances[i]
 		}
 	}
 	return 0
