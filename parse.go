@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/gagliardetto/solana-go"
@@ -23,8 +24,8 @@ var (
 
 // Parse extracts the swap from a transaction returned by the getTransaction
 // RPC method. Fetch it with encoding "json" or "base64" and
-// MaxSupportedTransactionVersion set to 0 so versioned transactions resolve
-// their address lookup tables.
+// MaxSupportedTransactionVersion set to 1 (the newest format), otherwise the
+// node rejects versioned transactions.
 func Parse(tx *rpc.GetTransactionResult) (*SwapInfo, error) {
 	if tx == nil || tx.Transaction == nil {
 		return nil, fmt.Errorf("%w: missing transaction", ErrInvalidTransaction)
@@ -82,12 +83,12 @@ func ParseTransaction(tx *solana.Transaction, meta *rpc.TransactionMeta) (*SwapI
 	info := &SwapInfo{
 		Signatures:     tx.Signatures,
 		Signers:        v.signerList(),
-		Routers:        e.routers,
 		TransactionFee: meta.Fee,
 	}
 	trader := e.trader()
 	info.Trader = trader
-	info.Fees = e.collectFees()
+	info.Fees = e.collectFees() // also labels bots recognised by their fee wallets
+	info.Routers = e.routers
 
 	swaps := e.swaps
 	if len(swaps) == 0 {
@@ -99,6 +100,9 @@ func ParseTransaction(tx *solana.Transaction, meta *rpc.TransactionMeta) (*SwapI
 	}
 	info.Swaps = swaps
 	summarize(info, swaps)
+	info.Trader = e.beneficiary(info)
+	// Payouts to an order owner who did not sign are not fees.
+	info.Fees = slices.DeleteFunc(info.Fees, func(f Fee) bool { return f.Recipient == info.Trader })
 	return info, nil
 }
 

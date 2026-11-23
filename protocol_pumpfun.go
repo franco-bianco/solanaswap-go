@@ -14,9 +14,12 @@ type pumpFunTrade struct {
 	isBuy       bool
 	user        solana.PublicKey
 
+	// hasFees is false for events recorded before the fee fields were
+	// added; the protocol fee was then a fixed 1% of solAmount.
+	hasFees bool
+	// fee is the total protocol fee, including the buyback share.
 	fee        uint64
 	creatorFee uint64
-	buybackFee uint64
 	// quoteMint and quoteAmount are set for coins quoted in a token other
 	// than SOL.
 	quoteMint   solana.PublicKey
@@ -50,6 +53,7 @@ func parsePumpFunTrade(data []byte) (pumpFunTrade, bool) {
 	if !r.ok {
 		return pumpFunTrade{mint: t.mint, solAmount: t.solAmount, tokenAmount: t.tokenAmount, isBuy: t.isBuy, user: t.user}, true
 	}
+	t.hasFees = true
 
 	r.bool()   // track_volume
 	r.u64()    // total_unclaimed_tokens
@@ -61,16 +65,28 @@ func parsePumpFunTrade(data []byte) (pumpFunTrade, bool) {
 	r.u64()    // cashback_fee_basis_points
 	r.u64()    // cashback
 	r.u64()    // buyback_fee_basis_points
-	buybackFee := r.u64()
+	r.u64()    // buyback_fee (part of fee)
 	shareholders := r.u32()
 	r.skip(int(shareholders) * (32 + 2)) // address, share_bps
 	quoteMint := r.pubkey()
 	quoteAmount := r.u64()
 	if r.ok {
-		t.buybackFee = buybackFee
 		t.quoteMint, t.quoteAmount = quoteMint, quoteAmount
 	}
 	return t, true
+}
+
+// legacyPumpFunFeeBps is the protocol fee that applied to every trade
+// before TradeEvent reported fees.
+const legacyPumpFunFeeBps = 100
+
+// fees returns the fees the program charges on top of (buys) or deducts
+// from (sells) the curve amount.
+func (t pumpFunTrade) fees(curveAmount uint64) uint64 {
+	if !t.hasFees {
+		return curveAmount * legacyPumpFunFeeBps / 10_000
+	}
+	return t.fee + t.creatorFee
 }
 
 // decodePumpFun decodes Pump.fun bonding-curve trades from TradeEvent.
@@ -81,8 +97,14 @@ func parsePumpFunTrade(data []byte) (pumpFunTrade, bool) {
 // leaves no transfer to measure, so the output is the event's curve amount
 // minus the fees the program deducts.
 func decodePumpFun(e *extractor, ix *instruction) []Swap {
+	// Since August 2024 the event is emitted both through self-CPI and as a
+	// log line; earlier transactions only have the log line.
+	events := cpiEvents(ix, pumpFunTradeEvent)
+	if len(events) == 0 {
+		events = e.v.logEventsOf(ix, pumpFunTradeEvent)
+	}
 	var swaps []Swap
-	for _, data := range cpiEvents(ix, pumpFunTradeEvent) {
+	for _, data := range events {
 		t, ok := parsePumpFunTrade(data)
 		if !ok {
 			continue
@@ -96,14 +118,14 @@ func decodePumpFun(e *extractor, ix *instruction) []Swap {
 		if t.isBuy {
 			paid := e.userOutflow(ix, quoteMint)
 			if paid == 0 {
-				paid = quoteAmount + t.fee + t.creatorFee + t.buybackFee
+				paid = quoteAmount + t.fees(quoteAmount)
 			}
 			s.InputMint, s.InputAmount = quoteMint, paid
 			s.OutputMint, s.OutputAmount = t.mint, t.tokenAmount
 		} else {
 			received := e.userInflow(ix, quoteMint)
 			if received == 0 {
-				received = quoteAmount - min(quoteAmount, t.fee+t.creatorFee+t.buybackFee)
+				received = quoteAmount - min(quoteAmount, t.fees(quoteAmount))
 			}
 			s.InputMint, s.InputAmount = t.mint, t.tokenAmount
 			s.OutputMint, s.OutputAmount = quoteMint, received

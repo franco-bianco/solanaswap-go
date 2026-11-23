@@ -285,11 +285,52 @@ func (v *txView) tokenBalanceDelta(owner solana.PublicKey) map[solana.PublicKey]
 	return delta
 }
 
+// ownerDeltas returns post-pre raw balance changes of mint per owner.
+func (v *txView) ownerDeltas(mint solana.PublicKey) map[solana.PublicKey]int64 {
+	delta := make(map[solana.PublicKey]int64)
+	add := func(balances []rpc.TokenBalance, sign int64) {
+		for _, b := range balances {
+			if b.Mint != mint || b.UiTokenAmount == nil || int(b.AccountIndex) >= len(v.keys) {
+				continue
+			}
+			amount, err := strconv.ParseInt(b.UiTokenAmount.Amount, 10, 64)
+			if err != nil {
+				continue
+			}
+			delta[v.ownerOf(v.keys[b.AccountIndex])] += sign * amount
+		}
+	}
+	add(v.meta.PreTokenBalances, -1)
+	add(v.meta.PostTokenBalances, 1)
+	return delta
+}
+
 // lamportDelta returns post-pre lamports of the account at addr.
 func (v *txView) lamportDelta(addr solana.PublicKey) int64 {
 	for i, k := range v.keys {
 		if k == addr && i < len(v.meta.PreBalances) && i < len(v.meta.PostBalances) {
 			return int64(v.meta.PostBalances[i]) - int64(v.meta.PreBalances[i])
+		}
+	}
+	return 0
+}
+
+// postLamports returns the lamports held by addr after the transaction.
+func (v *txView) postLamports(addr solana.PublicKey) uint64 {
+	for i, k := range v.keys {
+		if k == addr && i < len(v.meta.PostBalances) {
+			return v.meta.PostBalances[i]
+		}
+	}
+	return 0
+}
+
+// preTokenAmount returns the raw token balance of addr before the transaction.
+func (v *txView) preTokenAmount(addr solana.PublicKey) uint64 {
+	for _, b := range v.meta.PreTokenBalances {
+		if int(b.AccountIndex) < len(v.keys) && v.keys[b.AccountIndex] == addr && b.UiTokenAmount != nil {
+			n, _ := strconv.ParseUint(b.UiTokenAmount.Amount, 10, 64)
+			return n
 		}
 	}
 	return 0

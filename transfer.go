@@ -113,32 +113,40 @@ func (v *txView) subtreeTransfers(root *instruction) []transfer {
 	return out
 }
 
-// accountFunding returns the lamports payer moved into newly created
-// accounts (rent deposits) and the lamports it recovered by closing token
-// accounts. Both are bookkeeping, not part of a trade.
+// accountFunding returns the rent payer deposited into accounts created by
+// the transaction that still exist afterwards, and the rent it recovered by
+// closing accounts that existed before. Accounts created and closed within
+// the transaction cancel out and are ignored. Neither is part of a trade.
 func (v *txView) accountFunding(payer solana.PublicKey) (deposited, refunded uint64) {
 	closed := make(map[solana.PublicKey]bool)
 	for _, ix := range v.flat {
 		switch {
 		case ix.programID.Equals(solana.SystemProgramID) && len(ix.data) >= 12 && len(ix.accounts) >= 2:
 			tag := binary.LittleEndian.Uint32(ix.data[:4])
-			if (tag == systemIxCreateAccount || tag == systemIxCreateAccountWithSeed) && ix.accounts[0] == payer {
-				// CreateAccount: tag, lamports, space, owner.
-				// CreateAccountWithSeed: tag, base, seed (len-prefixed), lamports, ...
-				if tag == systemIxCreateAccount {
-					deposited += binary.LittleEndian.Uint64(ix.data[4:12])
-				} else if lamports, ok := createWithSeedLamports(ix.data); ok {
+			if ix.accounts[0] != payer || v.postLamports(ix.accounts[1]) == 0 {
+				continue
+			}
+			switch tag {
+			case systemIxCreateAccount: // tag, lamports, space, owner
+				deposited += binary.LittleEndian.Uint64(ix.data[4:12])
+			case systemIxCreateAccountWithSeed:
+				if lamports, ok := createWithSeedLamports(ix.data); ok {
 					deposited += lamports
 				}
 			}
 		case isTokenProgram(ix.programID) && len(ix.data) > 0 && ix.data[0] == tokenIxCloseAccount && len(ix.accounts) >= 2:
-			if ix.accounts[1] == payer && !closed[ix.accounts[0]] {
-				closed[ix.accounts[0]] = true
-				// The refund includes the account's lamports at close time;
-				// for wrapped SOL that also contains the unwrapped balance,
-				// which the token balance delta already accounts for.
-				refunded += v.preLamports(ix.accounts[0])
+			acct := ix.accounts[0]
+			if ix.accounts[1] != payer || closed[acct] {
+				continue
 			}
+			closed[acct] = true
+			// The refund is the account's rent plus, for wrapped SOL, its
+			// token balance; the token balance delta already covers the latter.
+			rent := v.preLamports(acct)
+			if v.tokenAccounts[acct].mint == solana.WrappedSol {
+				rent -= min(rent, v.preTokenAmount(acct))
+			}
+			refunded += rent
 		}
 	}
 	return deposited, refunded

@@ -16,7 +16,8 @@ import (
 type extractor struct {
 	v *txView
 
-	// swapRoots are the outermost invocations of known DEX programs.
+	// swapRoots are the outermost invocations of DEX programs: registered
+	// ones and unregistered programs detected by looksLikeSwap.
 	swapRoots []*instruction
 	// userAuthorities are accounts that act on the user side of a swap: the
 	// transaction signers and every authority that moves tokens outside of a
@@ -43,7 +44,7 @@ func newExtractor(v *txView) *extractor {
 		e.userAuthorities[s] = true
 	}
 	for _, root := range v.roots {
-		e.collectSwapRoots(root)
+		e.collectSwapRoots(root, nil)
 	}
 	for _, ix := range v.flat {
 		t, ok := v.decodeTransfer(ix)
@@ -54,20 +55,31 @@ func newExtractor(v *txView) *extractor {
 	return e
 }
 
-func (e *extractor) collectSwapRoots(ix *instruction) {
+// collectSwapRoots finds the DEX invocations in the subtree of ix. An
+// unregistered program counts as a DEX when an aggregator invokes it
+// directly (aggregators only call venues) or when it swaps with a signer.
+func (e *extractor) collectSwapRoots(ix, parent *instruction) {
 	spec, known := registry[ix.programID]
-	switch {
-	case known && spec.Kind == KindDEX:
+	if known && spec.Kind == KindDEX {
 		e.swapRoots = append(e.swapRoots, ix)
 		return
-	case !known && !infrastructurePrograms[ix.programID] && e.looksLikeSwap(ix):
+	}
+	if !known && !infrastructurePrograms[ix.programID] && (e.calledByAggregator(ix, parent) || e.looksLikeSwap(ix)) {
 		e.swapRoots = append(e.swapRoots, ix)
 		e.unknownDEX[ix] = true
 		return
 	}
 	for _, child := range ix.children {
-		e.collectSwapRoots(child)
+		e.collectSwapRoots(child, ix)
 	}
+}
+
+func (e *extractor) calledByAggregator(ix, parent *instruction) bool {
+	if parent == nil || ix.programID == parent.programID {
+		return false // top level, or an aggregator emitting its own event
+	}
+	spec, ok := registry[parent.programID]
+	return ok && spec.Kind == KindAggregator
 }
 
 // looksLikeSwap reports whether an unrecognised program swaps directly with a
@@ -102,12 +114,7 @@ func (e *extractor) looksLikeSwap(ix *instruction) bool {
 }
 
 func (e *extractor) insideSwapRoot(ix *instruction) bool {
-	for _, root := range e.swapRoots {
-		if ix.within(root) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(e.swapRoots, ix.within)
 }
 
 // run decodes all swaps in execution order.
@@ -126,12 +133,24 @@ func (e *extractor) visit(ix *instruction) {
 	if known && spec.decode != nil {
 		if swaps := spec.decode(e, ix); len(swaps) > 0 {
 			e.emit(ix, swaps...)
+			if spec.Kind == KindDEX {
+				e.consumed = append(e.consumed, ix)
+			} else {
+				// An aggregator's events cover the DEX invocations it makes;
+				// its own transfers (fees, staging) are not part of a swap.
+				for _, child := range ix.children {
+					if child.programID != ix.programID && !infrastructurePrograms[child.programID] {
+						e.consumed = append(e.consumed, child)
+					}
+				}
+			}
 			return
 		}
 	}
 	if (known && spec.Kind == KindDEX) || e.unknownDEX[ix] {
 		if s, ok := e.transferSwap(ix, protocolName(ix.programID)); ok {
 			e.emit(ix, s)
+			e.consumed = append(e.consumed, ix)
 		}
 		return
 	}
@@ -156,7 +175,6 @@ func (e *extractor) emit(root *instruction, swaps ...Swap) {
 		s.OutputDecimals = e.decimals(s.OutputMint)
 		e.swaps = append(e.swaps, s)
 	}
-	e.consumed = append(e.consumed, root)
 }
 
 func (e *extractor) addRouter(name string) {
@@ -187,6 +205,31 @@ func (e *extractor) trader() solana.PublicKey {
 	}
 	// Keeper-executed orders: the program account owns the funds.
 	return first
+}
+
+// beneficiary refines the trader once the route is known. For keeper-filled
+// orders it is the order owner. Otherwise it is the signer whose balance of
+// the output token grew the most (or, for SOL outputs, whose input token
+// balance shrank the most), which identifies the user behind relayers and
+// gasless apps whose own signer funds the route.
+func (e *extractor) beneficiary(info *SwapInfo) solana.PublicKey {
+	if owner, ok := e.orderOwner(); ok {
+		return owner
+	}
+	mint, sign := info.TokenOutMint, int64(1)
+	if mint == solana.WrappedSol {
+		mint, sign = info.TokenInMint, -1
+	}
+	if mint == solana.WrappedSol || info.TokenInMint == info.TokenOutMint {
+		return info.Trader
+	}
+	best, bestDelta := info.Trader, int64(0)
+	for owner, delta := range e.v.ownerDeltas(mint) {
+		if d := sign * delta; e.v.signers[owner] && d > bestDelta {
+			best, bestDelta = owner, d
+		}
+	}
+	return best
 }
 
 // isUserSide reports whether account belongs to the user side of a swap.
@@ -226,7 +269,7 @@ func (e *extractor) transferSwap(ix *instruction, protocol string) (Swap, bool) 
 	return Swap{
 		Protocol:     protocol,
 		ProgramID:    ix.programID,
-		Trader:       e.v.ownerOf(firstWithMint(inputs, inMint).authority),
+		Trader:       firstWithMint(inputs, inMint).authority,
 		InputMint:    inMint,
 		InputAmount:  inAmount,
 		OutputMint:   outMint,

@@ -73,18 +73,16 @@ func (e *extractor) collectFees() []Fee {
 		if tipAccounts[recipient] {
 			kind = FeeKindTip
 		}
+		if bot, ok := botFeeWallets[recipient]; ok {
+			e.addRouter(bot)
+		}
 		fees = append(fees, Fee{Kind: kind, Mint: t.mint, Amount: t.amount, Recipient: recipient})
 	}
 	return fees
 }
 
 func (e *extractor) isConsumed(ix *instruction) bool {
-	for _, root := range e.consumed {
-		if ix.within(root) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(e.consumed, ix.within)
 }
 
 // feedsSwap reports whether account is debited inside a decoded swap, i.e.
@@ -111,14 +109,12 @@ func (e *extractor) balanceSwap(trader solana.PublicKey, fees []Fee) (Swap, bool
 	if trader == e.v.feePayer() {
 		sol += int64(e.v.meta.Fee)
 	}
-	for _, f := range fees {
-		if f.Mint == solana.WrappedSol {
-			sol += int64(f.Amount)
-		}
-	}
 	deposited, refunded := e.v.accountFunding(trader)
 	sol += int64(deposited) - int64(refunded)
 	delta[solana.WrappedSol] += sol
+	for _, f := range fees {
+		delta[f.Mint] += int64(f.Amount)
+	}
 
 	var in, out []solana.PublicKey
 	for mint, d := range delta {

@@ -69,13 +69,6 @@ func (r *borshReader) u8() uint8 {
 
 func (r *borshReader) bool() bool { return r.u8() != 0 }
 
-func (r *borshReader) u16() uint16 {
-	if b := r.take(2); b != nil {
-		return binary.LittleEndian.Uint16(b)
-	}
-	return 0
-}
-
 func (r *borshReader) u32() uint32 {
 	if b := r.take(4); b != nil {
 		return binary.LittleEndian.Uint32(b)
@@ -124,7 +117,7 @@ func (v *txView) mapLogEvents() {
 	for _, line := range v.meta.LogMessages {
 		switch {
 		case strings.HasPrefix(line, "Program data: ") && len(stack) > 0:
-			for _, chunk := range strings.Fields(strings.TrimPrefix(line, "Program data: ")) {
+			for chunk := range strings.FieldsSeq(strings.TrimPrefix(line, "Program data: ")) {
 				if data, err := base64.StdEncoding.DecodeString(chunk); err == nil {
 					top := stack[len(stack)-1]
 					events[top] = append(events[top], data)

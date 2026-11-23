@@ -1,24 +1,2251 @@
 [
   {
-    "file": "issue27_pumpswap_sell_bot_fee_4QAQRuuj.json",
-    "description": "Issue #27: PumpSwap sell through a trading bot; the bot's 1% SOL fee must be reported as a fee, not part of the swap",
+    "file": "1dex_jupiter-3hop-sell_46aqjmwi.json",
+    "description": "jupiter-3hop-sell",
+    "trader": "4QzWBCpR244QY4EfACVmbsWA431iRokvRycFfke4WhEL",
+    "inMint": "HziM5WEJewPsJ4yhZxY4pWpUQZeVKuSfHa6rNgUyZvJX",
+    "inAmount": "44241699429",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "5297193",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "HziM5WEJewPsJ4yhZxY4pWpUQZeVKuSfHa6rNgUyZvJX",
+        "inAmount": "44241699429",
+        "outMint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "outAmount": "233916"
+      },
+      {
+        "protocol": "",
+        "inMint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "inAmount": "233916",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "386238"
+      },
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "386238",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "5297193"
+      }
+    ]
+  },
+  {
+    "file": "alphaq_jupiter-3hop-platformfee_2wzusmyj.json",
+    "description": "jupiter-3hop-platformfee",
+    "trader": "E85DoLA69EnKLqWAG7YmSPiTJBBexPygV6wDNG7x3GcH",
+    "inMint": "GexThZHgaswpAQ7Fi8QrHFubjPimUNSYhJiAA7XZpump",
+    "inAmount": "23773113529",
+    "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "outAmount": "17583189",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "GexThZHgaswpAQ7Fi8QrHFubjPimUNSYhJiAA7XZpump",
+        "inAmount": "23773113529",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "241193953"
+      },
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "241193953",
+        "outMint": "USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB",
+        "outAmount": "17589300"
+      },
+      {
+        "protocol": "",
+        "inMint": "USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB",
+        "inAmount": "17589300",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "17583189"
+      }
+    ]
+  },
+  {
+    "file": "arbbot_jupiter_token_ledger_5pthckn3.json",
+    "description": "arb bot: own program swaps on Manifest, then Jupiter set_token_ledger + route_with_token_ledger",
+    "trader": "DrUUtuGgQmLJcBrJ36nKHpufmw1XqA6ztYTSz55v4bHL",
+    "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "inAmount": "144200",
+    "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "outAmount": "144202",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "144200",
+        "outMint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "outAmount": "87437"
+      },
+      {
+        "protocol": "",
+        "inMint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "inAmount": "87437",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "144202"
+      }
+    ]
+  },
+  {
+    "file": "archer_jupiter-relayed-buy_kp5iy6qa.json",
+    "description": "jupiter-relayed-buy",
+    "trader": "79KN6AhMAG36FbY62QfG5H9UcYPb1r7RwTbs3NLZbii2",
+    "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "inAmount": "4900000",
+    "outMint": "Bp6Aen8xiLqhKLHwb27dViwAsojLjhoSPhzpEZm7UmqC",
+    "outAmount": "68529868017",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "4900000",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "62028652"
+      },
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "62028652",
+        "outMint": "Bp6Aen8xiLqhKLHwb27dViwAsojLjhoSPhzpEZm7UmqC",
+        "outAmount": "68529868017"
+      }
+    ]
+  },
+  {
+    "file": "axiom_buy_pumpswap_2hop_4k3mjdya.json",
+    "description": "axiom program wraps 2 PumpSwap pools (SOL->2j5SaS->H7M49q, intermediate goes pool->pool); tx version 1",
+    "trader": "Ee1Hr4EhzrrmJwP6hUqrF9ZAKp5onWYFCAGYiuvniSVB",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "203035275",
+    "outMint": "H7M49qLSWEEMaDkeQ32BhZWBuTUais879xS3TBsspump",
+    "outAmount": "566439876128",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "203035275",
+        "outMint": "2j5SaS7xy776qCBpyPQbZjyQSAtKiFgrwjfErthnW2ZM",
+        "outAmount": "1524184487"
+      },
+      {
+        "protocol": "",
+        "inMint": "2j5SaS7xy776qCBpyPQbZjyQSAtKiFgrwjfErthnW2ZM",
+        "inAmount": "1524184487",
+        "outMint": "H7M49qLSWEEMaDkeQ32BhZWBuTUais879xS3TBsspump",
+        "outAmount": "566439876128"
+      }
+    ]
+  },
+  {
+    "file": "axiom_sell_pumpfun_dust_2w7ohf2c.json",
+    "description": "Axiom program wraps a dust Pump.fun sell; fee paid into Axiom's fee vault",
+    "trader": "Ct6eMibdK36KsygPuAyp2sFcNAJL8KvP2Ebsf4XBL6Li",
+    "inMint": "4wPmM4tQUtB3QgtGTbpaLSGAoKZPMcVdaa2sJxuKpump",
+    "inAmount": "32636504",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "973",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "4wPmM4tQUtB3QgtGTbpaLSGAoKZPMcVdaa2sJxuKpump",
+        "inAmount": "32636504",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "973"
+      }
+    ],
+    "fees": [
+      {
+        "kind": "platform",
+        "amount": "9",
+        "recipient": "2ApLdwLrGayEmxgpLX9BTR47Q2QprfMg5SpjrLeaK8s7"
+      }
+    ]
+  },
+  {
+    "file": "bananagun_buy_pumpswap_skppog6c.json",
+    "description": "banana gun program wraps PumpSwap buy_exact_quote_in; tx version 1",
+    "trader": "2tpVruBUDtvSmvz6nr3PE4FE5ky2dza4sBijHvpbfj71",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "198000000",
+    "outMint": "FuKY3dk7QmpbDdQRjzbjB3G6PiCuqKNvN4dAWDpwpump",
+    "outAmount": "81654136754",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "198000000",
+        "outMint": "FuKY3dk7QmpbDdQRjzbjB3G6PiCuqKNvN4dAWDpwpump",
+        "outAmount": "81654136754"
+      }
+    ]
+  },
+  {
+    "file": "bananagun_sell_dlmm_3hm46lxe.json",
+    "description": "Banana Gun program wraps a Meteora DLMM swap2 sell (v1 transaction); 1% bot fee reported in Fees",
+    "trader": "9AAF7CT6yL864JGwEzGYPmuvP6ENB7GLfZFtEdYqoL9X",
+    "inMint": "TTWofwAge91oFhZs7kpQdyrVRkmevgM88xijGvQFbKo",
+    "inAmount": "776",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "2228594",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "TTWofwAge91oFhZs7kpQdyrVRkmevgM88xijGvQFbKo",
+        "inAmount": "776",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "2228594"
+      }
+    ],
+    "fees": [
+      {
+        "kind": "platform",
+        "amount": "22285",
+        "recipient": "3spK1TmrAnFUDRN2bErDAVw225tLE7uFpQeP9WNXP2nY"
+      }
+    ]
+  },
+  {
+    "file": "bisonfi_toplevel-direct_2odwvznn.json",
+    "description": "toplevel-direct",
+    "trader": "CsHQQHuEkMGjMGG2vc1EPpvAvrFgwAMwxz6LHnZrTF4Z",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "6813698166",
+    "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "outAmount": "496642127"
+  },
+  {
+    "file": "bloom_buy_cpmm_3qktmugt.json",
+    "description": "bloom buy: Bloom ix wraps CPMM; fee as separate top-level transfer",
+    "trader": "FFhBbsoLrpK97cZKRBywgWyK5jmuVjYwzGKuuDTN57n5",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "80000",
+    "outMint": "EM8ezwFW5hnDPohkqtwRrfWAYGThpCyhX8t33QJRe47f",
+    "outAmount": "756786995",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "80000",
+        "outMint": "EM8ezwFW5hnDPohkqtwRrfWAYGThpCyhX8t33QJRe47f",
+        "outAmount": "756786995"
+      }
+    ]
+  },
+  {
+    "file": "bloom_sell_multihop_jrlchg9s.json",
+    "description": "Bloom program wraps a 3-hop sell starting on a token-quoted Pump.fun curve; 1% bot fee reported in Fees",
+    "trader": "GNbXwTo2vazq2C6ku1gLL51wa8fJLZVHR7SpVT2gq32R",
+    "inMint": "5PMm9VBT5unPjF3iNNh9wyoHB7CwgY4wVaJf9nkQpump",
+    "inAmount": "1115810758448",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "106269227",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "5PMm9VBT5unPjF3iNNh9wyoHB7CwgY4wVaJf9nkQpump",
+        "inAmount": "1115810758448",
+        "outMint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "outAmount": "4697388"
+      },
+      {
+        "protocol": "",
+        "inMint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "inAmount": "4697388",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "7756689"
+      },
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "7756689",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "106269227"
+      }
+    ],
+    "fees": [
+      {
+        "kind": "platform",
+        "amount": "1062692",
+        "recipient": "7HeD6sLLqAnKVRuSfc1Ko3BSPMNKWgGTiWLKXJF31vKM"
+      }
+    ]
+  },
+  {
+    "file": "bonkbot_buy_pumpswap_42egdfbs.json",
+    "description": "bonkbot: BBRouter wraps PumpSwap buy; fee native SOL via Cxvks..",
+    "trader": "AbppgDMp7MZE1T2sFLh1hCRHzXxTqVTELYYV6dAP2PBa",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "247500000",
+    "outMint": "DsuztYTs2PnXRy4NrcVRzQRK1jbvvntPGSjCbdpMpump",
+    "outAmount": "151814249384",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "247500000",
+        "outMint": "DsuztYTs2PnXRy4NrcVRzQRK1jbvvntPGSjCbdpMpump",
+        "outAmount": "151814249384"
+      }
+    ]
+  },
+  {
+    "file": "bonkbot_sell_pumpswap_463eusjj.json",
+    "description": "BonkBot router wraps a PumpSwap sell; 1% wSOL fee paid by the BonkBot fee program",
+    "trader": "HNBmDfgNbCi8KSY4fkk5urjtaVP5BCBjAAL4aJwaFkej",
+    "inMint": "AXTatkyo4TpHfdFyqVAZJATURbRPVLMW4oA5p1rbpump",
+    "inAmount": "99866827223",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "45772972",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "AXTatkyo4TpHfdFyqVAZJATURbRPVLMW4oA5p1rbpump",
+        "inAmount": "99866827223",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "45772972"
+      }
+    ],
+    "fees": [
+      {
+        "kind": "platform",
+        "amount": "457729",
+        "recipient": "ZG98FUCjb8mJ824Gbs6RsgVmr1FhXb2oNiJHa2dwmPd"
+      }
+    ]
+  },
+  {
+    "file": "boop_buytoken_direct_e5jejpds.json",
+    "description": "Nov-2026 direct Boop buy_token (native SOL)",
+    "trader": "5oAPhUzYS3ryfzLbTrvq5gbkuhf8VzreQ6uTfuZmrLVu",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "994000",
+    "outMint": "8LibKjXVppCEYoRQwSzqXEcQfo9LWrLoqCAJqw6boop",
+    "outAmount": "32108564894100"
+  },
+  {
+    "file": "boop_selltoken_direct_jcemdzap.json",
+    "description": "Nov-2026 direct Boop sell_token (native SOL from PDA sol vault)",
+    "trader": "5oAPhUzYS3ryfzLbTrvq5gbkuhf8VzreQ6uTfuZmrLVu",
+    "inMint": "8LibKjXVppCEYoRQwSzqXEcQfo9LWrLoqCAJqw6boop",
+    "inAmount": "32108564894372",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "976160"
+  },
+  {
+    "file": "byreal_jupiter-arb-2hop_2qfm6qt5.json",
+    "description": "jupiter-arb-2hop",
+    "trader": "moodt1QXNtbmiheUJr9EGfch7h5mTxcWqCLyzXxWNu6",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "64396139",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "64408899",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "64396139",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "4695674"
+      },
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "4695674",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "64408899"
+      }
+    ]
+  },
+  {
+    "file": "dbc_buy_swap2_feeonbase_4aacqafx.json",
+    "description": "Nov-2026 direct DBC swap2 buy with fee_on_base_token=true (fee charged on the token output)",
+    "trader": "8xhCvxLyykxyM1dJBz8oHzwmm5UTVBgoyagoF91dxPx3",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "557948993",
+    "outMint": "83tt9SRQGKy7nX98FvZ9uPJrgQAGvQvz4pcvS59b56yi",
+    "outAmount": "311361344860"
+  },
+  {
+    "file": "dbc_buy_swap2_partialfill_referral_flashx_rjvrvqfs.json",
+    "description": "Nov-2026 DBC swap2 swap_mode=1 (PartialFill) buy via FLASHX router, with referral account and anti-sniper fee (~71.6%); v1 transaction",
+    "trader": "8kVLmc31e4goNKsq7b2AR8zLEWqdQByBsQeGgMqNqWzR",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "1005580364",
+    "outMint": "PDmExj7sv75MWskYFgKkQzc8o1nCFfeVbF2491Uumbk",
+    "outAmount": "3845306745316"
+  },
+  {
+    "file": "dbc_buy_swap_2025_4r5ymj3y.json",
+    "description": "Jun-2025 direct DBC swap (v1 ix) buy; only EvtSwap emitted (no EvtSwap2/3)",
+    "trader": "EMwZGYqstvPu3x2iHKt7VkEaRpQuzvfwhqXjdBPudoHD",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "1000000000",
+    "outMint": "Dah7JQNBNAQZrEsnqB5Ksm6JUcASAixMx7yAupTGrBLV",
+    "outAmount": "5609445230657196"
+  },
+  {
+    "file": "dbc_buy_v1_base64_encoding_rjvrvqfs.json",
+    "description": "Same v1 transaction as dbc_buy_swap2_partialfill_referral_flashx, fetched with base64 encoding",
+    "trader": "8kVLmc31e4goNKsq7b2AR8zLEWqdQByBsQeGgMqNqWzR",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "1005580364",
+    "outMint": "PDmExj7sv75MWskYFgKkQzc8o1nCFfeVbF2491Uumbk",
+    "outAmount": "3845306745316"
+  },
+  {
+    "file": "dbc_sell_swap2_direct_1m18gxp1.json",
+    "description": "Nov-2026 direct DBC swap2 (ExactIn) sell; emits EvtSwap+EvtSwap2+EvtSwap3",
+    "trader": "7vy55UsnmvYMT9XLXasxMSbxEjwuGUW52MzmrXTvbrmA",
+    "inMint": "Bi7HbPrw7o9TJJcJLaoQobAv12AzkZygRgYg8T8V3zv4",
+    "inAmount": "28319559441",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "42358730"
+  },
+  {
+    "file": "denali_jupiter-single-platformfee_3tmab4x8.json",
+    "description": "jupiter-single-platformfee",
+    "trader": "5xfWkWsSMN9V8F7h2Fk5uLSS55Szb7uQebA1uphqd3CM",
+    "inMint": "NVDAVuiB7hwd3m5Wa1JuHNovPaPG6BH1QNztbKFxNjv",
+    "inAmount": "115104",
+    "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "outAmount": "18973057"
+  },
+  {
+    "file": "fomo_dflow_buy_2hop_2d23v8uy.json",
+    "description": "Fomo app: relayer-paid tx, DFlow swap (Jupiter-identical SwapEvent), USDC fee; trader != fee payer; tx version 1",
+    "trader": "8fybPuFa7f2LiokKdMPxMuhiksGhMsyGBUKjY1ykJ9dz",
+    "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "inAmount": "1900000",
+    "outMint": "G5u2YFvKmRdwEDAfS64GWiNdxZgm3rShv2P3Jf2ipump",
+    "outAmount": "209857290362",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "1900000",
+        "outMint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "outAmount": "1151300"
+      },
+      {
+        "protocol": "",
+        "inMint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "inAmount": "1151300",
+        "outMint": "G5u2YFvKmRdwEDAfS64GWiNdxZgm3rShv2P3Jf2ipump",
+        "outAmount": "209857290362"
+      }
+    ]
+  },
+  {
+    "file": "fomo_okxv2_buy_commission_eed8p5gs.json",
+    "description": "Fomo app via OKX v2 swap_tob, commission taken from input inside OKX ix",
+    "trader": "76rnNJ8rG5jfKR2cRhFsco45ELKHLvRdmLguSPh2VrzF",
+    "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "inAmount": "302584836",
+    "outMint": "FSfZuwaRFVcTtVBsiJ45NYK7Mwi3ANRcVT8kpbevtPGj",
+    "outAmount": "9255606553325",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "302584836",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "4152100400"
+      },
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "4152100400",
+        "outMint": "FSfZuwaRFVcTtVBsiJ45NYK7Mwi3ANRcVT8kpbevtPGj",
+        "outAmount": "9255606553325"
+      }
+    ]
+  },
+  {
+    "file": "fomo_okxv2_sell_split_5zpqotng.json",
+    "description": "Fomo app (relayer-paid) via OKX v2 swap_tob_v3 split sell; Fomo USDC fee reported in Fees",
+    "trader": "6oQUvvin9DBLRymjGidb8Pmk3U4xV66cFdvCBzPpSER7",
+    "inMint": "CfNmk6r5zDChpbmYtqmv5aEcPptqaqh93kBpmbDrpump",
+    "inAmount": "141836464673",
+    "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "outAmount": "21324815",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "CfNmk6r5zDChpbmYtqmv5aEcPptqaqh93kBpmbDrpump",
+        "inAmount": "141836464673",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "292651911"
+      },
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "263386719",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "19192651"
+      },
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "29265192",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "2132164"
+      }
+    ],
+    "fees": [
+      {
+        "kind": "platform",
+        "amount": "428761",
+        "recipient": "R4rNJHaffSUotNmqSKNEfDcJE8A7zJUkaoM5Jkd7cYX"
+      }
+    ]
+  },
+  {
+    "file": "gmgn_buy_pumpswap_direct_4w6bp7kq.json",
+    "description": "gmgn: PumpSwap buy direct (no GMGN program); fee top-level transfer",
+    "trader": "3iW4cS8biqkv731jPJdasjPohiZ3w2RTvbXXtSYahhca",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "1000000000",
+    "outMint": "DsuztYTs2PnXRy4NrcVRzQRK1jbvvntPGSjCbdpMpump",
+    "outAmount": "742041711572",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "1000000000",
+        "outMint": "DsuztYTs2PnXRy4NrcVRzQRK1jbvvntPGSjCbdpMpump",
+        "outAmount": "742041711572"
+      }
+    ]
+  },
+  {
+    "file": "gmgn_sell_pumpfun_374zmjjz.json",
+    "description": "GMGN program proxies a Pump.fun sell; 1% fee reported in Fees, GMGN tip separate",
+    "trader": "C6ch4c3yhRHRS48UyA7mpCVcT4EqivmPSHUhauwesdai",
+    "inMint": "DwkcuGdSBnLYqSd3QTBkCo6jiyT59cbZZjUmeW7Xpump",
+    "inAmount": "2434403936703",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "96305673",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "DwkcuGdSBnLYqSd3QTBkCo6jiyT59cbZZjUmeW7Xpump",
+        "inAmount": "2434403936703",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "96305673"
+      }
+    ],
+    "fees": [
+      {
+        "kind": "platform",
+        "amount": "963056",
+        "recipient": "dBhdrmwBkRa66XxBuAK4WZeZnsZ6bHeHCCLXa3a8bTJ"
+      }
+    ]
+  },
+  {
+    "file": "goonfiv2_titan-split-4legs_nufgl3le.json",
+    "description": "titan-split-4legs",
+    "trader": "HHDNRqmfdXwy7QbHBCJKiUdqHtCC5xgjN7oh2rMMstby",
+    "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "inAmount": "916551",
+    "outMint": "A7bdiYdS5GjqGFtxf17ppRHtDKPkkRqbKtR27dxvQXaS",
+    "outAmount": "114274",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "881204",
+        "outMint": "A7bdiYdS5GjqGFtxf17ppRHtDKPkkRqbKtR27dxvQXaS",
+        "outAmount": "109852"
+      },
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "35347",
+        "outMint": "4cQ9BeG6bdpkQcYGadqc1n6nCWgMuoHZenVH1xXepump",
+        "outAmount": "643517402"
+      },
+      {
+        "protocol": "",
+        "inMint": "4cQ9BeG6bdpkQcYGadqc1n6nCWgMuoHZenVH1xXepump",
+        "inAmount": "643517402",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "487118"
+      },
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "487118",
+        "outMint": "A7bdiYdS5GjqGFtxf17ppRHtDKPkkRqbKtR27dxvQXaS",
+        "outAmount": "4422"
+      }
+    ]
+  },
+  {
+    "file": "hadron_jupiter-arb-feetransfer_482wxqpu.json",
+    "description": "jupiter-arb-feetransfer",
+    "trader": "FDYyAvtqbwUsCweJTQ2L2fUfmG6utbXUiedBPBKBywcL",
+    "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "inAmount": "50000000",
+    "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "outAmount": "50003799",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "50000000",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "686025000"
+      },
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "686025000",
+        "outMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+        "outAmount": "50054902"
+      },
+      {
+        "protocol": "",
+        "inMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+        "inAmount": "50054902",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "50003799"
+      }
+    ]
+  },
+  {
+    "file": "heaven_buy_jupiter2hop_2gqwudc6.json",
+    "description": "Nov-2026 Heaven buy as 2nd hop of a Jupiter route USDC -> SOL (BiSoNH) -> LIGHT (Heaven); Token-2022 base with transfer-fee extension",
+    "trader": "F73LAQ3x3dYETwQqFbKe3i1QHc9JLptAubAKAX9NVDsK",
+    "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "inAmount": "349060",
+    "outMint": "LiGHtkg3uTa9836RaNkKLLriqTNRcMdRAhqjGWNv777",
+    "outAmount": "563281066532",
+    "legs": [
+      {
+        "protocol": "Heaven",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "4750789",
+        "outMint": "LiGHtkg3uTa9836RaNkKLLriqTNRcMdRAhqjGWNv777",
+        "outAmount": "563281066532"
+      }
+    ]
+  },
+  {
+    "file": "heaven_sell_jupiter_gasless_r6z1jmnq.json",
+    "description": "Nov-2026 Heaven sell via Jupiter; fee payer is a gas sponsor (gasTzr...), trader is the 2nd signer",
+    "trader": "CmutwF195YhS1AYV6JazHLGfHcvf7XSmwSoizLPSHyna",
+    "inMint": "7Aax1HHJwn7xTa5WbaUKHtEAEyPMNDfWHxu5cPWHa777",
+    "inAmount": "13333333333333334",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "503524999"
+  },
+  {
+    "file": "humidifi_jupiter-circular-arb-3hop_28kmrjjh.json",
+    "description": "jupiter-circular-arb-3hop",
+    "trader": "A8A9GoxfmcjY2QAQ8tYS98SqDBF6hUFDmxAKBsLw29sL",
+    "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "inAmount": "66126316",
+    "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "outAmount": "66150709",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "66126316",
+        "outMint": "A7bdiYdS5GjqGFtxf17ppRHtDKPkkRqbKtR27dxvQXaS",
+        "outAmount": "8245797"
+      },
+      {
+        "protocol": "",
+        "inMint": "A7bdiYdS5GjqGFtxf17ppRHtDKPkkRqbKtR27dxvQXaS",
+        "inAmount": "8245797",
+        "outMint": "7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs",
+        "outAmount": "3827491"
+      },
+      {
+        "protocol": "",
+        "inMint": "7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs",
+        "inAmount": "3827491",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "66150709"
+      }
+    ]
+  },
+  {
+    "file": "issue13_jupiter_two_routes_51ugebma.json",
+    "description": "two independent jupiter route ixs (buy then sell, round trip)",
+    "trader": "FwzzXFQwRrHuLhajg4BN3z74x3Bv8vL8HcUecWCnVu1w"
+  },
+  {
+    "file": "issue13_okx_v1_swap2_split_3jqxvlge.json",
+    "description": "okx v1 swap2, 4-way split",
+    "trader": "CfkpaaKL72sbTt6RsfeGj1ig1bQqHHbboHxyBmJQLqMS",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "200000000000",
+    "outMint": "74SBV4zDXxTRgv1pEMoECskKBkZHc2yGPnc7GYVepump",
+    "outAmount": "115543290814",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "124000000000",
+        "outMint": "74SBV4zDXxTRgv1pEMoECskKBkZHc2yGPnc7GYVepump",
+        "outAmount": "71618580723"
+      },
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "48000000000",
+        "outMint": "74SBV4zDXxTRgv1pEMoECskKBkZHc2yGPnc7GYVepump",
+        "outAmount": "27728579944"
+      },
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "24000000000",
+        "outMint": "74SBV4zDXxTRgv1pEMoECskKBkZHc2yGPnc7GYVepump",
+        "outAmount": "13886815247"
+      },
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "4000000000",
+        "outMint": "74SBV4zDXxTRgv1pEMoECskKBkZHc2yGPnc7GYVepump",
+        "outAmount": "2309314900"
+      }
+    ]
+  },
+  {
+    "file": "issue27_pumpswap_sell_4qaqruuj.json",
+    "description": "Issue #27: top-level PumpSwap sell; the PumpSwap protocol fee must not be added to the output and the unidentified bot's SOL fee is reported in Fees",
     "trader": "F8fB6ZkhL7qfUttYcpWMnaKyz2NRrXhYvsTDYUhrPZCq",
     "inMint": "CjqxraDuTMEcfhdqY8qEaMY43icdBrkt3EXciNVpump",
     "inAmount": "11472097615",
     "outMint": "So11111111111111111111111111111111111111112",
     "outAmount": "432337456",
-    "amms": ["PumpSwap"],
-    "fees": [{"kind": "platform", "amount": "4241437", "recipient": "9RYJ3qr5eU5xAooqVcbmdeusjcViL5Nkiq7Gske3tiKq"}]
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "CjqxraDuTMEcfhdqY8qEaMY43icdBrkt3EXciNVpump",
+        "inAmount": "11472097615",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "432337456"
+      }
+    ],
+    "fees": [
+      {
+        "kind": "platform",
+        "amount": "4241437",
+        "recipient": "9RYJ3qr5eU5xAooqVcbmdeusjcViL5Nkiq7Gske3tiKq"
+      }
+    ],
+    "amms": [
+      "PumpSwap"
+    ]
   },
   {
-    "file": "issue35_jupiter_dlmm_3HZzfDRB.json",
-    "description": "Issue #35: Jupiter route through Meteora DLMM; timestamp must be the block time and the direction is USDC -> Preb (verified from balances)",
+    "file": "issue29_pumpfun_migrate_6x6ovwcq.json",
+    "description": "Issue #29: Pump.fun migration of a bonding curve into a PumpSwap pool is not a swap",
+    "err": "no swap"
+  },
+  {
+    "file": "issue35_jupiter_ultra_route_3hzzfdrb.json",
+    "description": "Issue #35: Jupiter route through Meteora DLMM; the direction USDC -> Preb is correct and the timestamp must be the block time",
     "trader": "AZ47eJFFAYCjU51QWn6iazXCUWFkQoHnRSJR3tp2DGsP",
     "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
     "inAmount": "138404396088",
     "outMint": "Preb5VKsmKgMGhMKUhDpe7A2AhMDmrZtMMZmvFEhLbU",
     "outAmount": "201138329611",
-    "amms": ["Meteora DLMM"],
-    "routers": ["Jupiter"]
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "138404396088",
+        "outMint": "Preb5VKsmKgMGhMKUhDpe7A2AhMDmrZtMMZmvFEhLbU",
+        "outAmount": "201138329611"
+      }
+    ],
+    "amms": [
+      "Meteora DLMM"
+    ],
+    "routers": [
+      "Jupiter"
+    ]
+  },
+  {
+    "file": "jupiter_recurring_dca_fill_2qrsknmb.json",
+    "description": "Jupiter Recurring (DCA) keeper flash fill; trader is the order owner from the Filled event, the DCA platform fee is reported in Fees",
+    "trader": "GAdn7TZhszf5KTfwNRx3A2nP6KCRFEWucZubgdEqbJA2",
+    "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "inAmount": "621330000",
+    "outMint": "HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3",
+    "outAmount": "12183524988",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "621330000",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "8568653144"
+      },
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "8568653144",
+        "outMint": "HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3",
+        "outAmount": "12183524988"
+      }
+    ],
+    "fees": [
+      {
+        "kind": "platform",
+        "amount": "12183524",
+        "recipient": "CpoD6tWAsMDeyvVG2q2rD1JbDY6d4AujnvAn2NdrhZV2"
+      }
+    ]
+  },
+  {
+    "file": "jupiter_rfq_orderengine_fill_hdlv3kyy.json",
+    "description": "jupiter order engine (RFQ / JupiterZ) fill: market maker is fee payer, taker is 2nd signer; no event",
+    "trader": "E55bf7uB9WbHQNqSy8XhJpmZ6SctpBGD55U3NAE66B7Y",
+    "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "inAmount": "12331031730",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "169156761960",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "12331031730",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "169156761960"
+      }
+    ]
+  },
+  {
+    "file": "jupiter_route_v1_sell_6bipuumq.json",
+    "description": "jupiter route (v1) single hop sell, SwapEvent",
+    "trader": "GDKmZdqAzvK76c94hnU8nbrJuDsqqmNGBe3DrgtRq9gD",
+    "inMint": "CfNmk6r5zDChpbmYtqmv5aEcPptqaqh93kBpmbDrpump",
+    "inAmount": "201614528697",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "419895780",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "CfNmk6r5zDChpbmYtqmv5aEcPptqaqh93kBpmbDrpump",
+        "inAmount": "201614528697",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "419895780"
+      }
+    ]
+  },
+  {
+    "file": "jupiter_route_v2_2hop_nw45ho1b.json",
+    "description": "jupiter route_v2 two hops (prop AMM + DLMM); SwapsEvent with 2 entries",
+    "trader": "7rvZwNU3sg3XvHVS2xfNwJsxNdqnXJaccMdzn5tzd28F",
+    "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "inAmount": "550000000",
+    "outMint": "XsYzw7XHj8K2WHeoeNQVyevMmzjzXfcJ8tQ4FmdN1DL",
+    "outAmount": "648714052",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "550000000",
+        "outMint": "ANTBTZQ1EUuTxUs3tfeampxdqTWPHmwyJmcWj4xoAyNe",
+        "outAmount": "6479365"
+      },
+      {
+        "protocol": "",
+        "inMint": "ANTBTZQ1EUuTxUs3tfeampxdqTWPHmwyJmcWj4xoAyNe",
+        "inAmount": "6479365",
+        "outMint": "XsYzw7XHj8K2WHeoeNQVyevMmzjzXfcJ8tQ4FmdN1DL",
+        "outAmount": "648714052"
+      }
+    ]
+  },
+  {
+    "file": "jupiter_route_v2_circular_arb_qw2qpngt.json",
+    "description": "Jupiter route_v2 circular arbitrage USDC -> ... -> USDC; SwapsEvent contains a zero-amount hop which must be skipped",
+    "trader": "Ak9ez32JS2Y1BJ64HZjrdgDnWrzz6q7KHGjAZ8r9H3SE",
+    "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "inAmount": "409600000",
+    "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "outAmount": "409627439",
+    "legs": []
+  },
+  {
+    "file": "jupiter_route_v2_platformfee_qermxrwi.json",
+    "description": "jupiter route_v2 with platform_fee_bps=20 on input; SwapsEvent",
+    "trader": "HVxAjSeEvK1ow7qvtFCYhiYnYShre5EkhUdL37qjc9q1",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "22954000",
+    "outMint": "9a5DxpveEUcPKjcULbHU1YMDq5FwUZFtPLxw6YRGBAGS",
+    "outAmount": "715909458822549",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "22954000",
+        "outMint": "9a5DxpveEUcPKjcULbHU1YMDq5FwUZFtPLxw6YRGBAGS",
+        "outAmount": "715909458822549"
+      }
+    ]
+  },
+  {
+    "file": "jupiter_shared_route_3hop_31kyuzrp.json",
+    "description": "jupiter shared_accounts_route, 3 hops, 3 SwapEvents",
+    "trader": "5SEpbdjFK5FxwTvfsGMXVQTD2v4M2c5tyRTxhdsPkgDw",
+    "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "inAmount": "90362",
+    "outMint": "STREAMribRwybYpMmSYoCsQUdr6MZNXEqHgm7p1gu9M",
+    "outAmount": "11353979",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "90362",
+        "outMint": "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
+        "outAmount": "377334"
+      },
+      {
+        "protocol": "",
+        "inMint": "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
+        "inAmount": "377334",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "1236726"
+      },
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "1236726",
+        "outMint": "STREAMribRwybYpMmSYoCsQUdr6MZNXEqHgm7p1gu9M",
+        "outAmount": "11353979"
+      }
+    ]
+  },
+  {
+    "file": "jupiter_shared_route_v2_split_then_lp_2mgfwnad.json",
+    "description": "jupiter shared_accounts_route_v2 split route followed by an Orca increase-liquidity ix (not a swap)",
+    "trader": "H1GNE8aeV6Lnjz7EArcTqmWPsvok4Rneriv9BQg67pb1",
+    "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "inAmount": "18602918",
+    "outMint": "HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr",
+    "outAmount": "17069050",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "16774251",
+        "outMint": "HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr",
+        "outAmount": "15391965"
+      },
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "1828667",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "25080000"
+      },
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "25080000",
+        "outMint": "HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr",
+        "outAmount": "1677085"
+      }
+    ]
+  },
+  {
+    "file": "jupiter_trigger_v2_fill_3thtqzmk.json",
+    "description": "Jupiter Trigger v2 limit-order fill by a keeper; trader is the order maker; route output is gross (platform fee in Fees, keeper keeps the positive slippage)",
+    "trader": "EcPdhki1vmDpJdxjZGFVo1i8LZPkZjtL4AYXnoSQ1hkc",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "400000000",
+    "outMint": "CARDSccUMFKoPRZxt5vt3ksUbxEFEcnZ3H2pd3dKxYjp",
+    "outAmount": "172561315",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "400000000",
+        "outMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+        "outAmount": "29097900"
+      },
+      {
+        "protocol": "",
+        "inMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+        "inAmount": "29097900",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "29069217"
+      },
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "29069217",
+        "outMint": "CARDSccUMFKoPRZxt5vt3ksUbxEFEcnZ3H2pd3dKxYjp",
+        "outAmount": "172561315"
+      }
+    ],
+    "fees": [
+      {
+        "kind": "platform",
+        "amount": "172350",
+        "recipient": "27ZASRjinQgXKsrijKqb9xyRnH6W5KWgLSDveRghvHqc"
+      }
+    ]
+  },
+  {
+    "file": "kipseli_jupiter-single_5rebhixa.json",
+    "description": "jupiter-single",
+    "trader": "CsHQQHuEkMGjMGG2vc1EPpvAvrFgwAMwxz6LHnZrTF4Z",
+    "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "inAmount": "348304347",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "4777139742"
+  },
+  {
+    "file": "launchlab_buyexactin_fundedproxy_bbnb6ug1.json",
+    "description": "Nov-2026 LaunchLab buy_exact_in (top-level) by wallet C9ESMi, with SOL funded by a second signer 4RBnzE (2 signers); Token-2022 base",
+    "trader": "C9ESMiCcn9uaY7X8Cry6HER9xrujJ7dVk8QjwTi2UjH4",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "209742371",
+    "outMint": "5LdT6iwB7XE2vuwz7VHj8TryHAV3Yq2rEY1PLxPfDRAY",
+    "outAmount": "3556528962795"
+  },
+  {
+    "file": "launchlab_sellexactin_bot_pjsx5xcp.json",
+    "description": "Nov-2026 LaunchLab sell_exact_in via bot 9buc3tzJ (durable nonce, v1 transaction)",
+    "trader": "Fhbh1DTUDKt6qu9zVg8Q5VgnZa1WWWbxBxG6pCoJoggA",
+    "inMint": "5LdT6iwB7XE2vuwz7VHj8TryHAV3Yq2rEY1PLxPfDRAY",
+    "inAmount": "18331562520426",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "286220933"
+  },
+  {
+    "file": "launchlab_sellexactin_jupiter_n8b2exhm.json",
+    "description": "Nov-2026 LaunchLab sell_exact_in via Jupiter (v1 transaction)",
+    "trader": "6KJ1EKjeuZfLXMAZVwReVPVz5MA1rTUUbbxiAdtvL78d",
+    "inMint": "5LdT6iwB7XE2vuwz7VHj8TryHAV3Yq2rEY1PLxPfDRAY",
+    "inAmount": "793279546349",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "12612580"
+  },
+  {
+    "file": "maestro_buy_pumpswap_sxwpguwj.json",
+    "description": "maestro program wraps PumpSwap buy; durable-nonce tx; Maestro self-CPI event",
+    "trader": "9qv2QHm3PXi1UzyeEw7Mu9M2GNvJT59qHuxZDYzDFdKr",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "1000000000",
+    "outMint": "7SL2VnfYsChvog5oQY9Nmtqu1wceaMiQzWoqoLQpump",
+    "outAmount": "63780197721",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "1000000000",
+        "outMint": "7SL2VnfYsChvog5oQY9Nmtqu1wceaMiQzWoqoLQpump",
+        "outAmount": "63780197721"
+      }
+    ]
+  },
+  {
+    "file": "maestro_sell_multihop_3gqzdohp.json",
+    "description": "Maestro 3-hop sell from a PUMP-quoted Pump.fun curve; 1% bot fee reported in Fees",
+    "trader": "HczBjWSQoYVp89hqY3j7aoqJBC3CgC73oENmSd76xeH1",
+    "inMint": "HZ3v1udvxPbZoi93y9NDNmYDdbn5H8sXxJRNTDagpump",
+    "inAmount": "5090560925747",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "868850815",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "HZ3v1udvxPbZoi93y9NDNmYDdbn5H8sXxJRNTDagpump",
+        "inAmount": "5090560925747",
+        "outMint": "pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn",
+        "outAmount": "24882974446"
+      },
+      {
+        "protocol": "",
+        "inMint": "pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn",
+        "inAmount": "24882974446",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "63431699"
+      },
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "63431699",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "868850815"
+      }
+    ],
+    "fees": [
+      {
+        "kind": "platform",
+        "amount": "8688508",
+        "recipient": "MaestroUL88UBnZr3wfoN7hqmNWFi3ZYCGqZoJJHE36"
+      }
+    ]
+  },
+  {
+    "file": "manifest_toplevel-roundtrip-2swaps_4etxaj6a.json",
+    "description": "toplevel-roundtrip-2swaps",
+    "trader": "4h4ZbAPF62fJ4CWJhg1AsrKtTz6zbKeHWhqP9TtggBou",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "83850967",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "83857046",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "83850967",
+        "outMint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "outAmount": "3701446"
+      },
+      {
+        "protocol": "",
+        "inMint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "inAmount": "3701446",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "83857046"
+      }
+    ]
+  },
+  {
+    "file": "meteoradammv1_jupiter-sharedaccounts-2hop_258bk7jw.json",
+    "description": "jupiter-sharedaccounts-2hop",
+    "trader": "E3RzdGTu9JdeUZcB4NikV4W1txEGPHEXFHbC7gVNxE6Z",
+    "inMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+    "inAmount": "10000000",
+    "outMint": "2Wu1g2ft7qZHfTpfzP3wLdfPeV1is4EwQ3CXBfRYAciD",
+    "outAmount": "148982",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+        "inAmount": "10000000",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "9989840"
+      },
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "9989840",
+        "outMint": "2Wu1g2ft7qZHfTpfzP3wLdfPeV1is4EwQ3CXBfRYAciD",
+        "outAmount": "148982"
+      }
+    ]
+  },
+  {
+    "file": "meteoradammv1_titan-split-native-sol_4yqevr1x.json",
+    "description": "titan-split-native-sol",
+    "trader": "E1F13y8gHhWaq1oD3KVRf6fPsbBJGV4xPw6VyTkU97uQ",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "99190",
+    "outMint": "BNso1VUJnh4zcfpZa6986Ea66P6TCp59hvtNJ8b1X85",
+    "outAmount": "87099",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "28183",
+        "outMint": "BNso1VUJnh4zcfpZa6986Ea66P6TCp59hvtNJ8b1X85",
+        "outAmount": "24701"
+      },
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "71007",
+        "outMint": "rndrizKT3MK1iimdxRdWabcF7Zg7AR5T4nud4EkHBof",
+        "outAmount": "392540"
+      },
+      {
+        "protocol": "",
+        "inMint": "rndrizKT3MK1iimdxRdWabcF7Zg7AR5T4nud4EkHBof",
+        "inAmount": "392540",
+        "outMint": "C1VgiFdf5ymnTPKdR5BNM6sjazjKJQRKL6K2boG6Xfjv",
+        "outAmount": "203946131344"
+      },
+      {
+        "protocol": "",
+        "inMint": "C1VgiFdf5ymnTPKdR5BNM6sjazjKJQRKL6K2boG6Xfjv",
+        "inAmount": "203946131344",
+        "outMint": "BNso1VUJnh4zcfpZa6986Ea66P6TCp59hvtNJ8b1X85",
+        "outAmount": "62398"
+      }
+    ]
+  },
+  {
+    "file": "meteoradammv2_flashx-bot-referral_28fqfoug.json",
+    "description": "flashx-bot-referral",
+    "trader": "3voxjLmeTPaw5ysmTjtTY6KWm8CUWv1hhawh6qS5qTCm",
+    "inMint": "2m7afX2fS3cXckWahXBXLqwL2gLq8qkEMHQ4TivtF2Jn",
+    "inAmount": "659999",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "9846850"
+  },
+  {
+    "file": "meteoradammv2_swap2-direct-buy_jvvxf9au.json",
+    "description": "swap2-direct-buy",
+    "trader": "C2RrMqM69a6qqvUQRSjvRent3NXnbQyoV6CEMcmQ6XG3",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "453318",
+    "outMint": "DKkRbW6cGCYQYpT7EXaRK9556saCaGeqU4Yb9L5fuhvk",
+    "outAmount": "4426390619"
+  },
+  {
+    "file": "meteoradammv2_swap2-direct-sell_26mkvvto.json",
+    "description": "swap2-direct-sell",
+    "trader": "4wkzxPB2XGb632rbyE8ZPm9mTNN23aWKiYPxWssSg9un",
+    "inMint": "8s6nCMuAcuzN9mW1pFWk9mkryHR8mUiY7nsLMN9whWsZ",
+    "inAmount": "5692720751631",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "3982062089"
+  },
+  {
+    "file": "meteoradlmm_jupiter-pumpamm-multihop-sell_axtwuyix.json",
+    "description": "jupiter-pumpamm-multihop-sell",
+    "trader": "MrXtf55ZU5e2gBSnwYoFybg3JL8wJZ8fQGQXNvSZY8b",
+    "inMint": "CSjwLiCLyaJqXQm9XCV3LdYWMYswbZ7JQ71JKX77pump",
+    "inAmount": "1046102870344",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "134445777",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "CSjwLiCLyaJqXQm9XCV3LdYWMYswbZ7JQ71JKX77pump",
+        "inAmount": "1046102870344",
+        "outMint": "42uiGgChB5gn1817XmAytoo6hR96WsSXCA3MipCipump",
+        "outAmount": "443164524072"
+      },
+      {
+        "protocol": "",
+        "inMint": "42uiGgChB5gn1817XmAytoo6hR96WsSXCA3MipCipump",
+        "inAmount": "443164524072",
+        "outMint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "outAmount": "5935918"
+      },
+      {
+        "protocol": "",
+        "inMint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "inAmount": "5935918",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "134445777"
+      }
+    ]
+  },
+  {
+    "file": "meteoradlmm_king7ki4-arb-hostfee_4wvanwyc.json",
+    "description": "king7ki4-arb-hostfee",
+    "trader": "BkbtvEGSyCqChwzwA9KJFWdLd4RwW9Ps78WUgpQ1Qrun",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "48295",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "48304",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "48295",
+        "outMint": "DsuztYTs2PnXRy4NrcVRzQRK1jbvvntPGSjCbdpMpump",
+        "outAmount": "28131293"
+      },
+      {
+        "protocol": "",
+        "inMint": "DsuztYTs2PnXRy4NrcVRzQRK1jbvvntPGSjCbdpMpump",
+        "inAmount": "28131293",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "48304"
+      }
+    ]
+  },
+  {
+    "file": "meteoradlmmpro_jupiter-arb-manifest-global_2uuesl4l.json",
+    "description": "jupiter-arb-manifest-global",
+    "trader": "2MP1Bm8bvH6KHPSFJGMrAXAU4PwaF9JprxDy9fAdD25S",
+    "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "inAmount": "2351346",
+    "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "outAmount": "2352501",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "2351346",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "32259589"
+      },
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "32259589",
+        "outMint": "ANTBTZQ1EUuTxUs3tfeampxdqTWPHmwyJmcWj4xoAyNe",
+        "outAmount": "27358"
+      },
+      {
+        "protocol": "",
+        "inMint": "ANTBTZQ1EUuTxUs3tfeampxdqTWPHmwyJmcWj4xoAyNe",
+        "inAmount": "27358",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "2352501"
+      }
+    ]
+  },
+  {
+    "file": "mintech_buy_cpmm_dm7lwrmt.json",
+    "description": "mintech program wraps Raydium CPMM swap_base_input (sniper); tx version 1",
+    "trader": "qMgaNBBy6JvixR1jJfzoK9iXbJmsAEh9AKEQgigpd7G",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "6000000000",
+    "outMint": "h2Dvse9hmJmrHXVjZsacVnGCakgXrsMPrQXVbFvdo57",
+    "outAmount": "1704649150162132",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "6000000000",
+        "outMint": "h2Dvse9hmJmrHXVjZsacVnGCakgXrsMPrQXVbFvdo57",
+        "outAmount": "1704649150162132"
+      }
+    ]
+  },
+  {
+    "file": "moonshot_buy_jupiter_4z6t7r2f.json",
+    "description": "Nov-2026 Moonshot buy via Jupiter (v1 transaction); native SOL System transfers from user",
+    "trader": "9DFCPzoAfS8ZS74MBMU8WfMi5d5jZZRYVGdzPnLvfRCv",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "133447799",
+    "outMint": "2Y83aDyNZYSxfR3TzcA4vKyk6RsRLH2LuoutemVWmoon",
+    "outAmount": "4453099793795192"
+  },
+  {
+    "file": "moonshot_sell_jupiter_46ycrrvd.json",
+    "description": "Nov-2026 Moonshot sell via Jupiter; SOL by direct lamport manipulation",
+    "trader": "6FSEWgr8dj1rYYTjjkFMsrT23WJ9vN8PbDDSpPwNWzPG",
+    "inMint": "2kRNLqh33TKqUb1JaJngQjjocN4YKFsVWgWkkzjzjU2x",
+    "inAmount": "100000000000000",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "2803520"
+  },
+  {
+    "file": "moonshot_sell_routedtousdc_3gjay4gc.json",
+    "description": "Moonshot sell executed through the OKX v2 router PDA, proceeds routed to USDC via Raydium AMM v4 and CLMM; trader is the signing wallet, the 4146 USDC router commission is reported in Fees",
+    "trader": "26ENFiSrZcYaKcmRG3T5wmWvZ2Z1utdftJfJr9GRfdv3",
+    "inMint": "EuhYh1mTCtaCGBv6NuWz3VC5AcMmTYxxDGJFLkdjkCGu",
+    "inAmount": "100000000000000",
+    "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "outAmount": "518337",
+    "legs": [
+      {
+        "protocol": "Moonshot",
+        "inAmount": "100000000000000",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "6916222"
+      }
+    ],
+    "fees": [
+      {
+        "kind": "platform",
+        "amount": "4146",
+        "recipient": ""
+      }
+    ]
+  },
+  {
+    "file": "obsidian_toplevel-plus-jupiter-clmm-arb_27vdlhgd.json",
+    "description": "toplevel-plus-jupiter-clmm-arb",
+    "trader": "BiHtkcqDoByz6EkCLRuPKF8bbSCdDhgFkWU4RYGAy5FT",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "51881640",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "51889481",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "51881640",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "3783253"
+      },
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "3783253",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "51889481"
+      }
+    ]
+  },
+  {
+    "file": "pancakeswap_swapv1-direct_27wbnsve.json",
+    "description": "swapv1-direct",
+    "trader": "FkaLnX17cXZGyeu3kZGdHCNdFMJJzBrPPYVvd18B3MZp",
+    "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "inAmount": "80368279",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "1102154102"
+  },
+  {
+    "file": "phantom_okxv2_sell_3hop_4mztdcw6.json",
+    "description": "Phantom in-wallet swap through OKX v2 swap_tob; gross route output, Phantom commission and positive-slippage trim reported in Fees",
+    "trader": "GpcieFHYYQbhS8egp5s5AfJcup5W9X8FdU3hZBCdRySy",
+    "inMint": "HQSdUqaChwhvurp9kxdFLvXARRzWKV97GAsznt7vpump",
+    "inAmount": "74889296832",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "82327442",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "HQSdUqaChwhvurp9kxdFLvXARRzWKV97GAsznt7vpump",
+        "inAmount": "74889296832",
+        "outMint": "NVDAVuiB7hwd3m5Wa1JuHNovPaPG6BH1QNztbKFxNjv",
+        "outAmount": "36333"
+      },
+      {
+        "protocol": "",
+        "inMint": "NVDAVuiB7hwd3m5Wa1JuHNovPaPG6BH1QNztbKFxNjv",
+        "inAmount": "36333",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "6028454"
+      },
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "6028454",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "82327442"
+      }
+    ],
+    "fees": [
+      {
+        "kind": "platform",
+        "amount": "699783",
+        "recipient": "9yj3zvLS3fDMqi1F8zhkaWfq8TZpZWHe6cz1Sgt7djXf"
+      },
+      {
+        "kind": "platform",
+        "amount": "3448135",
+        "recipient": "9yj3zvLS3fDMqi1F8zhkaWfq8TZpZWHe6cz1Sgt7djXf"
+      }
+    ],
+    "routers": [
+      "OKX DEX Router v2",
+      "Phantom"
+    ]
+  },
+  {
+    "file": "photon_buy_pumpswap_4q4ryitn.json",
+    "description": "photon: PumpSwap buy called directly from user wallet; Photon ix only closes wSOL and charges fee",
+    "trader": "5uATZd1c2cDTR9uqfCiRjGa8kagkuoC5Y1Uq55pfUDFN",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "29700000",
+    "outMint": "nVs4Ec4nCVdCQk1xKSZ8YWMUYDUAfCdZkNRPM6fTsNH",
+    "outAmount": "80595138815",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "29700000",
+        "outMint": "nVs4Ec4nCVdCQk1xKSZ8YWMUYDUAfCdZkNRPM6fTsNH",
+        "outAmount": "80595138815"
+      }
+    ]
+  },
+  {
+    "file": "photon_titan_buy_multihop_5pchzzt8.json",
+    "description": "photon order routed through Titan (SOL -> Xsc9 split -> PumpSwap Xsc9-quoted pool); fee top-level",
+    "trader": "s3MSFvmp9ALPsMiJhhtAcTUgb3sYc3AWNagjvimSVQ3",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "99000000",
+    "outMint": "42uiGgChB5gn1817XmAytoo6hR96WsSXCA3MipCipump",
+    "outAmount": "323549015866",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "98210385",
+        "outMint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "outAmount": "4324937"
+      },
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "789615",
+        "outMint": "G32DYT2PpDsq5t8RLPVHMagtBKYAa2DSohFhkSjJs7C6",
+        "outAmount": "22157986929440"
+      },
+      {
+        "protocol": "",
+        "inMint": "G32DYT2PpDsq5t8RLPVHMagtBKYAa2DSohFhkSjJs7C6",
+        "inAmount": "22157986929440",
+        "outMint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "outAmount": "34831"
+      },
+      {
+        "protocol": "",
+        "inMint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "inAmount": "4359768",
+        "outMint": "42uiGgChB5gn1817XmAytoo6hR96WsSXCA3MipCipump",
+        "outAmount": "323549015866"
+      }
+    ]
+  },
+  {
+    "file": "pr28_pumpswap_buy_jhz8dhkk.json",
+    "description": "PR #28: PumpSwap buy whose pool transfer precedes the user's payment; must be parsed as a buy",
+    "trader": "5PgWdmEBhtmSFZ99ukF8TUqTAUPEK3uni8jmaQQLgxHG",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "1001181",
+    "outMint": "2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv",
+    "outAmount": "13498518",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "1001181",
+        "outMint": "2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv",
+        "outAmount": "13498518"
+      }
+    ],
+    "amms": [
+      "PumpSwap"
+    ]
+  },
+  {
+    "file": "pumpfun_buy_2024logonly_fwc67bgn.json",
+    "description": "Apr-2024 direct buy; OLDEST layout: TradeEvent 105B, emitted ONLY as a Program data log (no self-CPI); 12-account buy",
+    "trader": "HdcAHuPjfi2GUsss8G8LKf4J62zq8SVynvJhkicoSV71",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "10100000",
+    "outMint": "7b6TkvP8nc1u84CVTRSc3x3pMrLuuXmbBavg8np9kAWV",
+    "outAmount": "65527195577"
+  },
+  {
+    "file": "pumpfun_buyexactquoteinv2_bot_5wpdlghx.json",
+    "description": "Nov-2026 buy_exact_quote_in_v2 (SOL-paired, native SOL) via router 6Vo3245e; v1 transaction; ix_name reported as buy_exact_quote_in",
+    "trader": "2Dmx6qBNeD3184nKGZFUhMmD5C4kR9pRiKdVTK1jN8sU",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "13730088",
+    "outMint": "EK21ibrMUKoWRBswzh8PQs6RbByDV4bodwBFS9mWpump",
+    "outAmount": "686665358331"
+  },
+  {
+    "file": "pumpfun_buyexactquoteinv3_tokenquote_router_3fzucj8e.json",
+    "description": "Nov-2026 buy_exact_quote_in_v3 on a coin quoted in pump coin A7bdiY... (SPL, 8 dp); route SOL -> Orca whirlpool -> A7bd -> pump via router term9YPb; v1 transaction; ix_name buy_exact_quote_in",
+    "trader": "3VwxKtxoUbQwrH732XfV9khpHXAG731BQvSUCpvYeHwB",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "1188000000",
+    "outMint": "9Ma5dCc3q3LvrgDPnLHmqxGxzz6ekMwsyYFSu18o2DXL",
+    "outAmount": "3109048609745",
+    "legs": [
+      {
+        "protocol": "Pump.fun",
+        "inMint": "A7bdiYdS5GjqGFtxf17ppRHtDKPkkRqbKtR27dxvQXaS",
+        "inAmount": "10753718",
+        "outMint": "9Ma5dCc3q3LvrgDPnLHmqxGxzz6ekMwsyYFSu18o2DXL",
+        "outAmount": "3109048609745"
+      }
+    ]
+  },
+  {
+    "file": "pumpfun_buyexactsolin_bot_fsybfh9s.json",
+    "description": "Nov-2026 buy_exact_sol_in via bot program wywV31iZ (CPI); TradeEvent ix_name buy_exact_sol_in",
+    "trader": "DXiT8nYqKYnZrfxQx3xRSyTZddA8DAkR9TD3MbFVwvcz",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "288685041",
+    "outMint": "2eDV3YgtqLm3wrfrdrp6otsczFhaEWSfMvtYPeCTpump",
+    "outAmount": "821738035947"
+  },
+  {
+    "file": "pumpfun_sell_2024_3uxcbk37.json",
+    "description": "Aug-2024 direct sell; TradeEvent 121B (self-CPI + log); SOL paid by direct lamport manipulation",
+    "trader": "D3zetbZm7s9XMCBqKgurhZ5Qu1tGgJUg9wKKnPennHet",
+    "inMint": "GJLQUhXM5d4Fy4asfigu1UziKLh4na3VqMfnU3bN5ztz",
+    "inAmount": "2331417000000",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "73293107"
+  },
+  {
+    "file": "pumpfun_sell_2025router_3wjr1t6v.json",
+    "description": "Jun-2025 sell via bot router FAdo9NCw (CPI); TradeEvent 217B (creator fee era, no track_volume)",
+    "trader": "BBQyVRzxtdnsfGS8HM8xz1CgAVeeMdgg4rTketfTR39Z",
+    "inMint": "D5nW2ZUYaaJzKecuz8BQSqQZMtCPadvRoKADfdvNpump",
+    "inAmount": "573530162298",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "51773840"
+  },
+  {
+    "file": "pumpfun_sell_direct_3jz2gbh5.json",
+    "description": "Nov-2026 direct legacy sell (top-level), Token-2022 coin, SOL-paired; TradeEvent 383B (+8 undocumented bytes)",
+    "trader": "7sNoGcoSmj18CMrhRA6a2zkTz2Yf6kAmFugdfoCBj7Tn",
+    "inMint": "gU5yqZu5DcsQCdbFCSCNm62LV1MQ9dqkub7y6dPpump",
+    "inAmount": "4159844575751",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "267343195"
+  },
+  {
+    "file": "pumpfun_sellv2_zephyr_5qxg41ng.json",
+    "description": "Nov-2026 sell_v2 via ZEPHYR bot (durable-nonce tx, v1 transaction); TradeEvent 417B with non-empty shareholders vec",
+    "trader": "C7y4i7Pcir9xmotVyUb3S9Mz1cnjmpxGKyGDj7vWnoza",
+    "inMint": "gU5yqZu5DcsQCdbFCSCNm62LV1MQ9dqkub7y6dPpump",
+    "inAmount": "13287134985771",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "859879746"
+  },
+  {
+    "file": "pumpfun_sellv3_tokenquote_flashx_3zgf9vd8.json",
+    "description": "Nov-2026 sell_v3 of a coin paired with a Token-2022 pump-coin quote (Xsc9qv..., 8 dp) inside a FLASHX multi-hop route (pump -> Raydium CLMM -> 6RCmQ8 -> wSOL); v1 transaction",
+    "trader": "GSf3pHqQqBmsqqCgsaZiySnHiQP961tp7MSGS58DrGj6",
+    "inMint": "FytrNWbYKrndf7ePMJZ2udW4NvHqrsiP9kAV9Z9Apump",
+    "inAmount": "313850702397",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "95993282",
+    "legs": [
+      {
+        "protocol": "Pump.fun",
+        "inMint": "FytrNWbYKrndf7ePMJZ2udW4NvHqrsiP9kAV9Z9Apump",
+        "inAmount": "313850702397",
+        "outMint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "outAmount": "4316333"
+      }
+    ]
+  },
+  {
+    "file": "pumpswap_buy_2025arb_25p4uagc.json",
+    "description": "Arbitrage: PumpSwap buy then Meteora DAMM v2 sell back to SOL",
+    "trader": "NHtdVXcUuzULRJ3GkupLnZcxmUZ4rTP1u9kVkRzcash",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "60251",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "60276",
+    "legs": [
+      {
+        "protocol": "PumpSwap",
+        "inAmount": "60251",
+        "outMint": "DwEre9kiBWC14VqWvV9nUnpBwLn4Hw75ZhJ8EZbApump",
+        "outAmount": "39873421"
+      }
+    ]
+  },
+  {
+    "file": "pumpswap_buyexactquotein_direct_4mrc4ise.json",
+    "description": "Nov-2026 direct PumpSwap buy_exact_quote_in (wraps SOL first)",
+    "trader": "6Xfqr1rbodiMkp2zLWMNSrNnUPSEUsUzA2ZFCJTFsErA",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "38311768",
+    "outMint": "6oM2khHX4JJsnzBHBkQibewrbdcgQoEx1kFjEjJ9pump",
+    "outAmount": "12622347468"
+  },
+  {
+    "file": "pumpswap_buyexactquotein_router_5rkw9ark.json",
+    "description": "Nov-2026 PumpSwap buy_exact_quote_in via router 6Vo3245e (router wraps SOL); v1 transaction; BuyEvent field inconsistency",
+    "trader": "Ad6Qrjjvd4NvdJF1XvsB3thm4LAtiMo55GJoqXfAkJx3",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "94768435",
+    "outMint": "DsuztYTs2PnXRy4NrcVRzQRK1jbvvntPGSjCbdpMpump",
+    "outAmount": "60625892999"
+  },
+  {
+    "file": "pumpswap_sell_basewsol_klggx56e.json",
+    "description": "Nov-2026 direct PumpSwap sell on a pool whose BASE mint is wSOL (quote 8YtfpF..., 6 dp): selling SOL",
+    "trader": "8JNBfndKigqyF3ohKV3ffR9rjddzXZzayEYHK1aZbnDi",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "308728",
+    "outMint": "8YtfpFa1Mym9d2t5rWS4xH9mLRUv53ZSay5BhfrMVy2Z",
+    "outAmount": "217795542"
+  },
+  {
+    "file": "pumpswap_sell_direct_5t6ccrmq.json",
+    "description": "Nov-2026 direct PumpSwap sell (top-level), Token-2022 base -> wSOL",
+    "trader": "FrZY18sfrBG2m3iKfccDKKPDucfxj8Q6gHgDGQ7tBv8s",
+    "inMint": "7cFiqdT46zs7ooHWLFiLSaSQKLMibtokh9dBinsspump",
+    "inAmount": "43056103776",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "507055194"
+  },
+  {
+    "file": "raydium_route_buy_cpmm_2ei2zsy4.json",
+    "description": "raydium route: wrap(05) + swap(00) + unwrap(06) as 3 route ixs",
+    "trader": "DJSWmvbXSaWQoWw8bcUNSRPPFmQeMT7H5rD4T8QaggfQ",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "132991768",
+    "outMint": "kwVdSEHPLRUDWGgsn9Eb4PBPfAyLKBHcmh5WTgosq84",
+    "outAmount": "1102741119455041",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "132991768",
+        "outMint": "kwVdSEHPLRUDWGgsn9Eb4PBPfAyLKBHcmh5WTgosq84",
+        "outAmount": "1102741119455041"
+      }
+    ]
+  },
+  {
+    "file": "raydium_route_clmm_668cw9to.json",
+    "description": "raydium route ix 01 -> CLMM swap_v2",
+    "trader": "H4gKYRmQ2Hci3czL8rsdU6mne9MULdTCaSJDsiawQ72L",
+    "inMint": "Efa36mLoiepYixszUFh86YkgcC7Wd3oFH8C2811LRDhT",
+    "inAmount": "6285",
+    "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "outAmount": "156784",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "Efa36mLoiepYixszUFh86YkgcC7Wd3oFH8C2811LRDhT",
+        "inAmount": "6285",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "156784"
+      }
+    ]
+  },
+  {
+    "file": "raydiumclmm_okx-relayed-multihop_36c7xojf.json",
+    "description": "okx-relayed-multihop",
+    "trader": "7TWWzBXa51G5s2gWEitoorVqZfzpPQWLEAc6D4gXd6Zy",
+    "inMint": "HxfR3vLJsrg1rvFA3MzyWZaonLJNp4QpFsYj1M6ppump",
+    "inAmount": "10860932020023",
+    "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "outAmount": "93545844",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "HxfR3vLJsrg1rvFA3MzyWZaonLJNp4QpFsYj1M6ppump",
+        "inAmount": "10860932020023",
+        "outMint": "zK42Ztz6TdFUgd1f7cULoJMduX2B91auZpFK7hvpump",
+        "outAmount": "504788692508"
+      },
+      {
+        "protocol": "",
+        "inMint": "zK42Ztz6TdFUgd1f7cULoJMduX2B91auZpFK7hvpump",
+        "inAmount": "504788692508",
+        "outMint": "AMC1qwR9KhiyrQBRPrxnfo4JfMeMZqEBvt5tgTytNNoc",
+        "outAmount": "32998806"
+      },
+      {
+        "protocol": "",
+        "inMint": "AMC1qwR9KhiyrQBRPrxnfo4JfMeMZqEBvt5tgTytNNoc",
+        "inAmount": "32998806",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "93545844"
+      }
+    ]
+  },
+  {
+    "file": "raydiumclmm_raydium-router-buy_2rwhzsmn.json",
+    "description": "raydium-router-buy",
+    "trader": "8RvqEo9pqTmzhPbaEcnENY9WXJdRqHFWQVFqKA7QCCs5",
+    "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "inAmount": "15425000000",
+    "outMint": "HXkoSti7pvWDrbWTPe9DbuVJdXKmhMHKp4Uw9PsQ7d9E",
+    "outAmount": "4168461951309"
+  },
+  {
+    "file": "raydiumclmm_raydium-router-sell_5jybgn4x.json",
+    "description": "raydium-router-sell",
+    "trader": "Eh7L3kGmj7ZxJptSn3cWvjYZciuP4sHBkCVHMjxyjhYE",
+    "inMint": "DXJJuZaDhXuHZbpdaNKVM8KBoaA2MKw2Lau7CXXzKqw4",
+    "inAmount": "3768568",
+    "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "outAmount": "158683"
+  },
+  {
+    "file": "raydiumcpmm_bloom-bot-buy_2fuuycyb.json",
+    "description": "bloom-bot-buy",
+    "trader": "FFhBbsoLrpK97cZKRBywgWyK5jmuVjYwzGKuuDTN57n5",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "40000",
+    "outMint": "fnzSw5jFEMhyNGkBbTnYJsYRPdDcRJ6T6ESWjRY82T7",
+    "outAmount": "64843924997"
+  },
+  {
+    "file": "raydiumcpmm_swapbaseinput-direct-buy_4zmuirch.json",
+    "description": "swapbaseinput-direct-buy",
+    "trader": "CUkKyTN2GnkLKSucTF24qjhFn6jgSDAUQHF3RzLKhsZf",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "30000",
+    "outMint": "fnzSw5jFEMhyNGkBbTnYJsYRPdDcRJ6T6ESWjRY82T7",
+    "outAmount": "239356616776483"
+  },
+  {
+    "file": "raydiumv4_jupiter-circular-arb-3hop_52szlrbg.json",
+    "description": "jupiter-circular-arb-3hop",
+    "trader": "4CXY3aZB8pXybhX51oTTMV4HwrXv9GiNJ2NkcmqZBKQr",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "265756007",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "265767291",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "265756007",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "19378547"
+      },
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "19378547",
+        "outMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+        "outAmount": "19398273"
+      },
+      {
+        "protocol": "",
+        "inMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+        "inAmount": "19398273",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "265767291"
+      }
+    ]
+  },
+  {
+    "file": "raydiumv4_jupiter-route-buy_3bahu8qr.json",
+    "description": "jupiter-route-buy",
+    "trader": "nYtjywjnw3Kfjc9JB42A3QiKdiWJpmTfufFqxULnJN7",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "1570000000",
+    "outMint": "3Q8gipusCL7sq6LPtMfEgDNJ1AF3ejY8diPaBmLvpump",
+    "outAmount": "9604132382032"
+  },
+  {
+    "file": "raydiumv4_swapbaseinv2-direct-sell_2eyas2aa.json",
+    "description": "swapbaseinv2-direct-sell",
+    "trader": "MfDuWeqSHEqTFVYZ7LoexgAK9dxk7cy4DFJWjWMGVWa",
+    "inMint": "ukHH6c7mMyiWCf1b9pnWe25TSpkDDt3H5pQZgZ74J82",
+    "inAmount": "1592932764120",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "10254068731"
+  },
+  {
+    "file": "riptide_jupiter-arb-transferfee-ext_4vpmc4pl.json",
+    "description": "jupiter-arb-transferfee-ext",
+    "trader": "GvyLS9WFxUBzoiVPKTJAR2bGLocnoEVWRYh4D8i5z7m1",
+    "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "inAmount": "15164676",
+    "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "outAmount": "15165783",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "15164676",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "208054417"
+      },
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "208054417",
+        "outMint": "Xs8S1uUs1zvS2p7iwtsG3b6fkhpvmwz4GYU3gWAmWHZ",
+        "outAmount": "2327493"
+      },
+      {
+        "protocol": "",
+        "inMint": "Xs8S1uUs1zvS2p7iwtsG3b6fkhpvmwz4GYU3gWAmWHZ",
+        "inAmount": "2327493",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "15165783"
+      }
+    ]
+  },
+  {
+    "file": "saber_keeper-bot-split_55vg1akb.json",
+    "description": "keeper-bot-split",
+    "trader": "BH6VpqWQamRfQ7tqyvCdANFW7TWKbo4eWmAcyigpuUme",
+    "inMint": "6aiyJ9uwGYRE3tM6rk7oeqLwpdDcdtVgU7aW2mFFpump",
+    "inAmount": "31988874051",
+    "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "outAmount": "6604361",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "6aiyJ9uwGYRE3tM6rk7oeqLwpdDcdtVgU7aW2mFFpump",
+        "inAmount": "31988874051",
+        "outMint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A",
+        "outAmount": "75476079"
+      },
+      {
+        "protocol": "",
+        "inMint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A",
+        "inAmount": "75476079",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "90369890"
+      },
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "14739329",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "1077172"
+      },
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "75630561",
+        "outMint": "mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So",
+        "outAmount": "53307827"
+      },
+      {
+        "protocol": "",
+        "inMint": "mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So",
+        "inAmount": "53307827",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "5527189"
+      }
+    ]
+  },
+  {
+    "file": "sanctuminfinity_okx-3hop-native-sol_hvqbszua.json",
+    "description": "okx-3hop-native-sol",
+    "trader": "7uUgERKnaRCLkT33HEdNXd8PE58855BQgjmixo88AN2y",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "200000000",
+    "outMint": "7KffoftkLZHwRmumeRSVXm1sVo8D5Xs8weUbtA7cpump",
+    "outAmount": "1487534646519",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "200000000",
+        "outMint": "jupSoLaHXQiZZTSfEWMTRRgpnyFm8f6sZdosWBjx93v",
+        "outAmount": "163696533"
+      },
+      {
+        "protocol": "",
+        "inMint": "jupSoLaHXQiZZTSfEWMTRRgpnyFm8f6sZdosWBjx93v",
+        "inAmount": "163696533",
+        "outMint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A",
+        "outAmount": "166886397"
+      },
+      {
+        "protocol": "",
+        "inMint": "he1iusmfkpAdwvxLNGV8Y1iSbj4rUy6yMhEA3fotn9A",
+        "inAmount": "166886397",
+        "outMint": "7KffoftkLZHwRmumeRSVXm1sVo8D5Xs8weUbtA7cpump",
+        "outAmount": "1487534646519"
+      }
+    ]
+  },
+  {
+    "file": "solfiv2_jupiter-circular-arb-3hop_65qu9wss.json",
+    "description": "jupiter-circular-arb-3hop",
+    "trader": "FDYyAvtqbwUsCweJTQ2L2fUfmG6utbXUiedBPBKBywcL",
+    "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "inAmount": "134306710",
+    "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "outAmount": "134310792",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "134306710",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "1841955788"
+      },
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "1841955788",
+        "outMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+        "outAmount": "134447800"
+      },
+      {
+        "protocol": "",
+        "inMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+        "inAmount": "134447800",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "134310792"
+      }
+    ]
+  },
+  {
+    "file": "stabble_okx-split-weighted_glflryz3.json",
+    "description": "okx-split-weighted",
+    "trader": "C1QqRfbkQ8JWnKsjWmPJrExYAbhm7G4zoBSDT8wMWocB",
+    "inMint": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+    "inAmount": "45900782156",
+    "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "outAmount": "998696",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+        "inAmount": "45441774334",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "13567446"
+      },
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "13567446",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "988705"
+      },
+      {
+        "protocol": "",
+        "inMint": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+        "inAmount": "459007822",
+        "outMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+        "outAmount": "10002"
+      },
+      {
+        "protocol": "",
+        "inMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+        "inAmount": "10002",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "9991"
+      }
+    ]
+  },
+  {
+    "file": "titan_split-zerofi-goonfi-fee_3ujkw1la.json",
+    "description": "Titan split route USDC -> SPCX through ZeroFi and GoonFi v2 under the Titan router PDA; Titan's USDC fee reported in Fees, the router keeps 3453 of positive slippage",
+    "trader": "7aAgyvVdA1f6Xv5TWL7V1EYM6BQBLKUazsj6Rfoz6th6",
+    "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "inAmount": "4637467202",
+    "outMint": "SPCXxcqXj6e5dJDVNovHN8744zkbhM2bYudU45BimGb",
+    "outAmount": "34532460",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "1159366795",
+        "outMint": "SPCXxcqXj6e5dJDVNovHN8744zkbhM2bYudU45BimGb",
+        "outAmount": "8633975"
+      },
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "3478100407",
+        "outMint": "SPCXxcqXj6e5dJDVNovHN8744zkbhM2bYudU45BimGb",
+        "outAmount": "25898485"
+      }
+    ],
+    "fees": [
+      {
+        "kind": "platform",
+        "amount": "463793",
+        "recipient": "FdTEHJ9f7v2CmUph93TK1wn1obpSY4vKvSQvZoxuskKs"
+      }
+    ]
+  },
+  {
+    "file": "titan_split_usdc_usdt_44mvqr5d.json",
+    "description": "titan aggregator split route; no event",
+    "trader": "GgkFS2xhjzbkwi1pUyfWkwxDYMoxPkPpHwQuAxXyUZyK",
+    "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "inAmount": "10840129",
+    "outMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+    "outAmount": "10850670",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "8808320",
+        "outMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+        "outAmount": "8817095"
+      },
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "2031809",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "27870506"
+      },
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "27870506",
+        "outMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+        "outAmount": "2033575"
+      }
+    ]
+  },
+  {
+    "file": "trojan_buy_pumpswap_2xbuutz6.json",
+    "description": "trojan: PumpSwap buy_exact_quote_in top-level; troy... fee ix",
+    "trader": "63YpR5uMxLfvSMW4a5hgamzF23mQiDhBDEK3R2eqpwra",
+    "inMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "1000000000",
+    "outMint": "DsuztYTs2PnXRy4NrcVRzQRK1jbvvntPGSjCbdpMpump",
+    "outAmount": "587518717226",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "1000000000",
+        "outMint": "DsuztYTs2PnXRy4NrcVRzQRK1jbvvntPGSjCbdpMpump",
+        "outAmount": "587518717226"
+      }
+    ]
+  },
+  {
+    "file": "trojan_sell_pumpfun_2kmbqdia.json",
+    "description": "Trojan: top-level Pump.fun sell (SOL paid by lamport changes) plus Trojan fee program; both fee transfers reported in Fees",
+    "trader": "5Ly6VDXQP8F64fcZXuM6Kdo7W948WZfWHpoo7twzRG5a",
+    "inMint": "EbzMY9xKYMhU7N2RX7jNEQjCcdyc9YSqq2haja41pump",
+    "inAmount": "6589946458010",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "377802729",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "EbzMY9xKYMhU7N2RX7jNEQjCcdyc9YSqq2haja41pump",
+        "inAmount": "6589946458010",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "377802729"
+      }
+    ],
+    "fees": [
+      {
+        "kind": "platform",
+        "amount": "3825850",
+        "recipient": "9yMwSPk9mrXSN7yDHUuZurAh1sjbJsfpUqjZ7SvVtdco"
+      },
+      {
+        "kind": "platform",
+        "amount": "1500000",
+        "recipient": ""
+      }
+    ]
+  },
+  {
+    "file": "unknownrelayer_6vo324_jupv2_pumpfun_5phadma1.json",
+    "description": "unidentified gasless app program 6Vo3245e.. CPIs Jupiter route_v2 (USDC->SOL) then pump.fun buy; fees in USDC; relayer fee payer",
+    "trader": "CZiK5PJCfpstbzSsE8HRZe19SPDgwEYr6XaLbtCNKyJW",
+    "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "inAmount": "4977500",
+    "outMint": "288pmT52eEc5cLVaryrTSxrwChSmTZ61xWCMP53ypump",
+    "outAmount": "1506566169187",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "4977500",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "68029626"
+      },
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "68029626",
+        "outMint": "288pmT52eEc5cLVaryrTSxrwChSmTZ61xWCMP53ypump",
+        "outAmount": "1506566169187"
+      }
+    ]
+  },
+  {
+    "file": "vertigo_buy_splitroute_5qxolkim.json",
+    "description": "OKX v2 split route soKqZS -> SOL via Orca Whirlpool and Vertigo+Meteora DAMM v2; output is gross DEX output, the 13745-lamport router fee is reported in Fees",
+    "trader": "6uCAENT9WpiBDaSEwDABrPnbXDg57s5pU28LwEBokACr",
+    "inMint": "soKqZS9pASwBNS46G388nhK7XVtPaTyReffXEd3zora",
+    "inAmount": "227090436196",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "13745535",
+    "legs": [
+      {
+        "protocol": "Vertigo",
+        "inMint": "soKqZS9pASwBNS46G388nhK7XVtPaTyReffXEd3zora",
+        "inAmount": "6812713085",
+        "outMint": "TXtLircnVVRb6HidqaamdQmxbCyAsrn9858tjaszora",
+        "outAmount": "24274585967"
+      }
+    ],
+    "fees": [
+      {
+        "kind": "platform",
+        "amount": "13745",
+        "recipient": ""
+      }
+    ]
+  },
+  {
+    "file": "vertigo_sell_router_dpuhyzmy.json",
+    "description": "Nov-2026 Vertigo sell via router proVF4pM (router PDA is the Vertigo user); v1 transaction",
+    "trader": "DbM1RGkqRpGztRNRt23AwXy6ZWVqVjBRPY8u9c1F2bvq",
+    "inMint": "EBzVjVxtcqsDT1dXr8tqi4hjxJF1vccDdTJFzEz9gUrK",
+    "inAmount": "6243656000845",
+    "outMint": "So11111111111111111111111111111111111111112",
+    "outAmount": "178222657"
+  },
+  {
+    "file": "whirlpool_swapv2-direct-b2a_4c1vdola.json",
+    "description": "swapv2-direct-b2a",
+    "trader": "9nXDunV8eNvYSVys7JSBkm2hz9Q79Q3EYeko19srVeMC",
+    "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "inAmount": "25972198",
+    "outMint": "XsaBXg8dU5cPM6ehmVctMkVqoiRG2ZjMo1cyBJ3AykQ",
+    "outAmount": "26408703"
+  },
+  {
+    "file": "zerofi_jupiter-relayed-split_3cwbs5gk.json",
+    "description": "jupiter-relayed-split",
+    "trader": "Ak3DVg1znTPTDsJ8SiLrVJgSxLRuXw83MiEfyV1vEaSR",
+    "inMint": "DsuztYTs2PnXRy4NrcVRzQRK1jbvvntPGSjCbdpMpump",
+    "inAmount": "135166475821",
+    "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "outAmount": "15167190",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "DsuztYTs2PnXRy4NrcVRzQRK1jbvvntPGSjCbdpMpump",
+        "inAmount": "135166475821",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "208103301"
+      },
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "200819685",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "14636208"
+      },
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "7283616",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "530982"
+      }
+    ]
+  },
+  {
+    "file": "zerofi_toplevel-plus-jupiter-arb_4czfacri.json",
+    "description": "toplevel-plus-jupiter-arb",
+    "trader": "BXEHNbKPGeUHaqpaiHR6hc9mQkTZ2WFCXh6kkHkhFnCY",
+    "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "inAmount": "3561565",
+    "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "outAmount": "3562167",
+    "legs": [
+      {
+        "protocol": "",
+        "inMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "3561565",
+        "outMint": "SNDKbwMUQvZhnLnxLduradgLHG5KrPuKwpnrkkGRhfH",
+        "outAmount": "5060"
+      },
+      {
+        "protocol": "",
+        "inMint": "SNDKbwMUQvZhnLnxLduradgLHG5KrPuKwpnrkkGRhfH",
+        "inAmount": "5060",
+        "outMint": "So11111111111111111111111111111111111111112",
+        "outAmount": "49012100"
+      },
+      {
+        "protocol": "",
+        "inMint": "So11111111111111111111111111111111111111112",
+        "inAmount": "49012100",
+        "outMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outAmount": "3562167"
+      }
+    ]
   }
 ]

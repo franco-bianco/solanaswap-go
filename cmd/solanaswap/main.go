@@ -76,7 +76,9 @@ func fetchAndParse(endpoint, signature string, timeout time.Duration) (*solanasw
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	maxVersion := uint64(0)
+	// Version 1 is the newest transaction format; requesting it also
+	// returns legacy and v0 transactions.
+	maxVersion := uint64(1)
 	tx, err := rpc.New(endpoint).GetTransaction(ctx, sig, &rpc.GetTransactionOpts{
 		Encoding:                       solana.EncodingBase64,
 		Commitment:                     rpc.CommitmentConfirmed,

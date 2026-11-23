@@ -32,7 +32,18 @@ type testCase struct {
 		Amount    string `json:"amount"`
 		Recipient string `json:"recipient"`
 	} `json:"fees,omitempty"`
+	// Legs are individual hops that must appear in SwapInfo.Swaps.
+	Legs []struct {
+		Protocol  string `json:"protocol"`
+		InMint    string `json:"inMint"`
+		InAmount  string `json:"inAmount"`
+		OutMint   string `json:"outMint"`
+		OutAmount string `json:"outAmount"`
+	} `json:"legs,omitempty"`
 }
+
+// matches reports whether got equals want, treating an empty want as "any".
+func matches(got, want string) bool { return want == "" || got == want }
 
 func loadCases(t *testing.T) []testCase {
 	t.Helper()
@@ -98,6 +109,18 @@ func TestParseFixtures(t *testing.T) {
 				})
 				if !found {
 					t.Errorf("Fees = %+v, want a %s fee of %s to %s", info.Fees, want.Kind, want.Amount, want.Recipient)
+				}
+			}
+			for _, want := range tc.Legs {
+				found := slices.ContainsFunc(info.Swaps, func(s solanaswap.Swap) bool {
+					return matches(s.Protocol, want.Protocol) &&
+						matches(s.InputMint.String(), want.InMint) &&
+						matches(strconv.FormatUint(s.InputAmount, 10), want.InAmount) &&
+						matches(s.OutputMint.String(), want.OutMint) &&
+						matches(strconv.FormatUint(s.OutputAmount, 10), want.OutAmount)
+				})
+				if !found {
+					t.Errorf("Swaps = %+v, want a %s leg %s %s -> %s %s", info.Swaps, want.Protocol, want.InAmount, want.InMint, want.OutAmount, want.OutMint)
 				}
 			}
 			if info.Timestamp.IsZero() {
