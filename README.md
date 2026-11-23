@@ -155,7 +155,128 @@ blocks some clients; use your own RPC provider for anything beyond a quick test.
 `solanaswap.Programs()` returns the full registry. Unlisted venues are still
 parsed through the generic paths above and reported by program ID.
 
-<!-- supported-programs -->
+### Launchpads and bonding curves
+
+| Name | Program ID |
+|---|---|
+| Pump.fun | `6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P` |
+| PumpSwap | `pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA` |
+| Moonshot | `MoonCVVNZFSYkqNXP6bxHLPL6QQJiMagDL3qcqUQTrG` |
+| Raydium LaunchLab | `LanMV9sAd7wArD4vJFi2qDdfnVhFxYSUg6eADduJ3uj` |
+| Meteora DBC | `dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN` |
+| Boop.fun | `boop8hVGQGqehUK2iVEMEnMrL5RbjywRzHKBmBE7ry4` |
+| Heaven | `HEAVENoP2qxoeuF8Dj2oT1GHEnu49U5mJYkdeC8BAX2o` |
+| Vertigo | `vrTGoBuy5rYSxAfV3jaRJWHH6nN9WK4NRExGxsk1bCJ` |
+
+### AMMs and CLMMs
+
+| Name | Program ID |
+|---|---|
+| Raydium AMM v4 | `675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8` |
+| Raydium CPMM | `CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C` |
+| Raydium CLMM | `CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK` |
+| Orca Whirlpool | `whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc` |
+| Meteora DLMM | `LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo` |
+| Meteora DAMM v1 | `Eo7WjKq67rjJQSZxS6z3YkapzY3eMj6Xy8X5EQVn5UaB` |
+| Meteora DAMM v2 | `cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG` |
+| Raydium Stable | `5quBtoiQqxF9Jv6KYKctB59NT3gtJD2Y65kdnB1Uev3h` |
+| Orca Token Swap v2 | `9W959DqEETiGZocYWCQPaJ6sBmUzgfxXfqGeTEdp3aQP` |
+| Meteora DLMM Pro | `dPro1D5wiqnGMH8vMDG23jh35btTHoWdyqXjqkqxe8n` |
+| PancakeSwap | `HpNfyc2Saw7RKkQd8nEL4khUcuPhQ7WwY1B2qjx8jxFq` |
+| Byreal | `REALQqNEomY6cQGZJUGwywTBD2UmDT32rZcNnfxQ5N2` |
+| DefiTuna | `fUSioN9YKKSa3CUC2YUc4tPkHJ5Y6XW1yz8y6F7qWz9` |
+| Stabble Stable Swap | `swapNyd8XiQwJ6ianp9snpu4brUqFxadzvHebnAXjJZ` |
+| Stabble Weighted Swap | `swapFpHZwjELNnjvThjajtiVmkz3yPQEHjLtka2fwHW` |
+| Saber | `SSwpkEEcbUqx4vtoEByFjSkhKdCT862DNVb52nZg1UZ` |
+| Mercurial | `MERLuDFBMmsHnsBPZw2sDQZHvXFMwp8EdjudcU2HKky` |
+| Stableswap | `ghosty4ZU1Qk1HN7Ymz4pZ15QfspzJZgSYFkdKN6ZLK` |
+| Perena | `NUMERUNsFCP3kuNmWZuXtm1AaQCPj9uw6Guv2Ekoi5P` |
+| Sanctum Infinity | `5ocnV1qiCgaQR8Jb8xWnVbApfaygJ8tNoZfgPwsgx9kx` |
+| FluxBeam | `FLUXubRmkEi2q6K3Y9kBPg9248ggaZVsoSFhtJHSrm1X` |
+| GooseFX Gamma | `GAMMA7meSFWaBXF25oSUgmGRwaW6sCMFLmBNiMSdbHVT` |
+| Saros | `SSwapUtytfBdBn1b9NUGG6foMVPtcWgpRU32HToDUZr` |
+| Invariant | `HyaB3W9q6XdA5xwpU4XnSZV94htfmbmqJXZcEbRaJutt` |
+| Crema | `CLMM9tUoggJu2wagPkkqs9eFG4BWhVBZWkP1qv3Sp7tR` |
+| Lifinity v2 | `2wT8Yq49kHgDzXuPxZSaeLaH1qbmGXtEyPy64bL7aD3c` |
+| Woofi | `WooFif76YGRNjk1pA8wCsN67aQsD9f9iLsz4NcJ1AVb` |
+
+### Order books
+
+| Name | Program ID |
+|---|---|
+| Phoenix | `PhoeNiXZ8ByJGLkxNfZRnkUfjvmuYqLR89jjFHGqdXY` |
+| OpenBook v2 | `opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb` |
+| Manifest | `MNFSTqtC93rEfYHB6hF82sKdZpUDFWkViLByLd1k1Ms` |
+| Archer | `Archer8kgiavM61GyusMzaaS2ft5sALtNsD1HxkUPMhy` |
+| Deriverse | `DRVSpZ2YUYYKgZP8XtLhAGtT1zYSCKzeHfb4DgRnrgqD` |
+| 1DEX | `DEXYosS6oEGvk8uCDayvwEZz4qEyDJRf9nFgYCaqPMTm` |
+
+### Proprietary market makers and RFQ
+
+| Name | Program ID |
+|---|---|
+| HumidiFi | `9H6tua7jkLhdm3w8BvgpTn5LZNU7g4ZynDmCiNN3q6Rp` |
+| SolFi v2 | `SV2EYYJyRz2YhfXwXnhNAevDEui5Q6yrfyo13WtupPF` |
+| SolFi | `SoLFiHG9TfgtdUXUjWAxi3LtvYuFyDLVhBWxdMZxyCe` |
+| Tessera V | `TessVdML9pBGgG9yGks7o4HewRaXVAMuoVj4x83GLQH` |
+| GoonFi v2 | `goonuddtQRrWqqn5nFyczVKaie28f3kDkHWkHtURSLE` |
+| ZeroFi | `ZERor4xhbUycZ6gb9ntrhqscUcZmAbQDjEAtCf4hbZY` |
+| Obric v2 | `obriQD1zbpyLz95G5n7nJe6a4DPjpFwa5XYPoNm113y` |
+| AlphaQ | `ALPHAQmeA7bjrVuccPsYPiCvsi428SNwte66Srvs4pHA` |
+| BisonFi | `BiSoNHVpsVZW2F7rx2eQ59yQwKxzU5NvBcmKshCSUypi` |
+| Aquifer | `AQU1FRd7papthgdrwPTTq5JacJh8YtwEXaBfKU3bTz45` |
+| Scorch | `SCoRcH8c2dpjvcJD6FiPbCSQyQgu3PcUAWj2Xxx3mqn` |
+| Hadron | `HADRoNbLovyqhCsocfYQYB7QdfCAAinN9HTePvBCVDQ8` |
+| Kipseli | `3TK9D8aoBFYjYZtKCjciPrVrRStsnvo7KmpcJqDavpaU` |
+| Obsidian | `HBVw6bZtcCaezhcBrmfyXBSBRWCdv72271xQ4GPvms2z` |
+| Riptide | `riptK81hDxhe5pW5jSzSM9iRA8azgEgLJ4dXkPtBS7j` |
+| Denali | `DNL1tgEj3nJovHw9jtyCCQD3arssCJzkmpDizknwzey4` |
+| Jupiter RFQ | `61DFfeTKM7trxYcPQCM78bJ794ddZprZpAwAnLiwTpYH` |
+
+### Aggregators and order programs
+
+| Name | Program ID |
+|---|---|
+| Jupiter | `JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4` |
+| DFlow | `DF1ow4tspfHX9JwWJsAb9epbkA8hmpSEAtxXy1V27QBH` |
+| OKX DEX Router v2 | `proVF4pMXVaYqmy4NjniPh4pqKNfMmsihgd4wdkCX3u` |
+| OKX DEX Router (closed 2026-07) | `6m2CDdhRgxpH4WjvdzxAYbGxwdGUz5MziiL5jek2kBma` |
+| Titan | `T1TANpTeScyeqVzzgNViGDNrkQ6qHz9KrSBS4aNXvGT` |
+| Raydium Router | `routeUGWgWzqBWFcrCfv8tritsqukccJPu3q5GPP3xS` |
+| Jupiter Recurring | `DCA265Vj8a9CEuX1eb1LWRnDT7uK6q1xMipnNyatn23M` |
+| Jupiter DCA (retired) | `DCAK36VfExkPdAkYUQg6ewgxyinvcEyPLyHjRbmveKFw` |
+| Jupiter Trigger | `j1o2qRpjcyUwEvwtcfhEQefh773ZgjxcVRry7LDqg5X` |
+| Jupiter Limit Order | `jupoNjAxXgZ4rjzxzPMP4oxduvQsQtZzyknqvzYNrNu` |
+
+### Trading bots
+
+| Name | Program ID |
+|---|---|
+| Axiom | `FLASHX8DrLbgeR8FcfNV1F5krxYcYMUdBkrP1EPBtxB9` |
+| GMGN | `GMgnVFR8Jb39LoXsEVzb3DvBy3ywCmdmJquHUy1Lrkqb` |
+| Photon | `BSfD6SHZigAfDWSjzD5Q41jw8LmKwtmjskPH9XW1mrRW` |
+| Trojan | `troyXT7Ty3s2rjJe4bqWaroUrS4Fjd8rbHHNHxcACF4` |
+| Trojan (retired 2025) | `DM2dmBUi2he1bot4xF7PaSGLorUjWLm2DMFsWiTPuXzb` |
+| BonkBot | `BBRouter1cVunVXvkcqeKkZQcBK7ruan37PPm3xzWaXD` |
+| BonkBot | `CxvksNjwhdHDLr3qbCXNKVdeYACW8cs93vFqLqtgyFE5` |
+| BonkBot (retired 2025) | `AnCKmodpxycRZoAFgVwGjWuxP9wJPamghfvUw1fwKdpK` |
+| Banana Gun | `BANANAjs7FJiPQqJTGFzkZJndT9o7UmKiYYGaJz6frGu` |
+| Maestro | `MaestroAAe9ge5HTc64VbBQZ6fP77pwvrhM8i1XWSAx` |
+| Bloom | `b1oomGGqPKGD6errbyfbVMBuzSC8WtAAYo8MwNafWW1` |
+| MinTech | `minTcHYRLVPubRK8nt6sqe2ZpWrGDLQoNLipDJCGocY` |
+| Shuriken | `HEzM8TqVBvsgNKgqSbNkbL8J4Qq4DiRhz4NFXDKAKZiq` |
+| Nova (retired 2026) | `NoVA1TmDUqksaj2hB1nayFkPysjJbFiU76dT4qPw2wm` |
+
+### Bots recognised by their fee wallets
+
+Several bots call the DEX directly from the user's wallet and only charge
+their fee on chain, so they are labelled in `Routers` from the fee payment:
+Photon, Trojan, BonkBot, Maestro, Bloom, Banana Gun, Axiom, GMGN, Phantom
+(in-wallet swaps) and Fomo.
+
+Tips to Jito, Helius Sender, Nozomi (Temporal), bloXroute, 0slot, NextBlock,
+Astralane and Solana Vibe Station are reported as `"tip"` fees.
+
 
 ## Versions
 
