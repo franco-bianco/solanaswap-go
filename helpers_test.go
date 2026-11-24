@@ -54,7 +54,9 @@ func (b *txBuilder) keyIndexes(ks []solana.PublicKey) []uint16 {
 }
 
 func (b *txBuilder) top(program solana.PublicKey, data []byte, accounts ...solana.PublicKey) int {
-	b.outer = append(b.outer, solana.CompiledInstruction{ProgramIDIndex: b.key(program), Accounts: b.keyIndexes(accounts), Data: data})
+	b.outer = append(b.outer, solana.CompiledInstruction{
+		ProgramIDIndex: b.key(program), Accounts: b.keyIndexes(accounts), Data: data,
+	})
 	return len(b.outer) - 1
 }
 
@@ -66,7 +68,8 @@ func (b *txBuilder) cpi(outer int, height uint16, program solana.PublicKey, data
 
 // tokenTransfer adds an SPL Token Transfer CPI.
 func (b *txBuilder) tokenTransfer(outer int, height uint16, amount uint64, from, to, authority solana.PublicKey) {
-	b.cpi(outer, height, solana.TokenProgramID, binary.LittleEndian.AppendUint64([]byte{3}, amount), from, to, authority)
+	data := binary.LittleEndian.AppendUint64([]byte{3}, amount)
+	b.cpi(outer, height, solana.TokenProgramID, data, from, to, authority)
 }
 
 // balance records a token account's pre and post balance.
@@ -94,7 +97,8 @@ func (b *txBuilder) parse(t *testing.T) (*SwapInfo, error) {
 		PreTokenBalances: b.preTok, PostTokenBalances: b.postTok, LogMessages: b.logLines}
 	for i := range b.outer {
 		if ins, ok := b.inner[i]; ok {
-			meta.InnerInstructions = append(meta.InnerInstructions, rpc.InnerInstruction{Index: uint16(i), Instructions: ins})
+			set := rpc.InnerInstruction{Index: uint16(i), Instructions: ins}
+			meta.InnerInstructions = append(meta.InnerInstructions, set)
 		}
 	}
 	return ParseTransaction(tx, meta)

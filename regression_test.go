@@ -15,7 +15,8 @@ var raydiumCPMM = solana.MustPublicKeyFromBase58("CPMMoo8L3F4NbTegBCKVNunggL7H1Z
 // from its own account must not hide the registered DEX it calls.
 func TestUnknownWrapperDoesNotHideDEX(t *testing.T) {
 	user, feeWallet, router, pda := testKey(1), testKey(2), testKey(3), testKey(4)
-	userWSOL, vaultA, vaultB, pdaB, userB, poolAuth, mintB := testKey(5), testKey(6), testKey(7), testKey(8), testKey(9), testKey(10), testKey(11)
+	userWSOL, vaultA, vaultB := testKey(5), testKey(6), testKey(7)
+	pdaB, userB, poolAuth, mintB := testKey(8), testKey(9), testKey(10), testKey(11)
 
 	b := newTxBuilder(user)
 	o := b.top(router, []byte{9}, user, pda)
@@ -71,7 +72,8 @@ func TestMoonshotSellLogs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := newTxBuilder(user)
-			o := b.top(moonshotProgramID, []byte{1, 2, 3, 4, 5, 6, 7, 8}, user, testKey(20), curveATA, curve, userATA, testKey(21), mint)
+			accounts := []solana.PublicKey{user, testKey(20), curveATA, curve, userATA, testKey(21), mint}
+			o := b.top(moonshotProgramID, []byte{1, 2, 3, 4, 5, 6, 7, 8}, accounts...)
 			b.tokenTransfer(o, 2, 1000, userATA, curveATA, user)
 			b.balance(userATA, mint, user, 1000, 0)
 			b.balance(curveATA, mint, curve, 5000, 6000)
@@ -83,8 +85,10 @@ func TestMoonshotSellLogs(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if info.TokenInMint != mint || info.TokenInAmount != 1000 || info.TokenOutMint != solana.WrappedSol || info.TokenOutAmount != tt.out {
-				t.Errorf("got %d %s -> %d %s", info.TokenInAmount, info.TokenInMint, info.TokenOutAmount, info.TokenOutMint)
+			if info.TokenInMint != mint || info.TokenInAmount != 1000 ||
+				info.TokenOutMint != solana.WrappedSol || info.TokenOutAmount != tt.out {
+				t.Errorf("got %d %s -> %d %s",
+					info.TokenInAmount, info.TokenInMint, info.TokenOutAmount, info.TokenOutMint)
 			}
 			if len(info.Fees) != 0 {
 				t.Errorf("Fees = %+v, want none", info.Fees)
@@ -95,7 +99,8 @@ func TestMoonshotSellLogs(t *testing.T) {
 
 // A deposit into another protocol after a swap is not a fee.
 func TestDepositIsNotAFee(t *testing.T) {
-	user, userA, userB, vaultA, vaultB, poolAuth := testKey(1), testKey(2), testKey(3), testKey(4), testKey(5), testKey(6)
+	user, userA, userB := testKey(1), testKey(2), testKey(3)
+	vaultA, vaultB, poolAuth := testKey(4), testKey(5), testKey(6)
 	lending, reserve, lendingAuth, mintA, mintB := testKey(7), testKey(8), testKey(9), testKey(10), testKey(11)
 
 	b := newTxBuilder(user)
@@ -115,14 +120,16 @@ func TestDepositIsNotAFee(t *testing.T) {
 		t.Fatal(err)
 	}
 	if info.TokenInAmount != 100 || info.TokenOutAmount != 50 || len(info.Fees) != 0 {
-		t.Errorf("got %d -> %d, fees %+v; want 100 -> 50 and no fees", info.TokenInAmount, info.TokenOutAmount, info.Fees)
+		t.Errorf("got %d -> %d, fees %+v; want 100 -> 50 and no fees",
+			info.TokenInAmount, info.TokenOutAmount, info.Fees)
 	}
 }
 
 // Without stack heights, a DEX called by a bot must own the transfers after it,
 // but not the bot's own fee payment.
 func TestMissingStackHeights(t *testing.T) {
-	user, bot, userA, userB, vaultA, vaultB, poolAuth, mintA, mintB := testKey(1), testKey(2), testKey(3), testKey(4), testKey(5), testKey(6), testKey(7), testKey(8), testKey(9)
+	user, bot, userA, userB := testKey(1), testKey(2), testKey(3), testKey(4)
+	vaultA, vaultB, poolAuth, mintA, mintB := testKey(5), testKey(6), testKey(7), testKey(8), testKey(9)
 	trojanFees := solana.MustPublicKeyFromBase58("9yMwSPk9mrXSN7yDHUuZurAh1sjbJsfpUqjZ7SvVtdco")
 
 	b := newTxBuilder(user)
@@ -153,7 +160,8 @@ func TestMissingStackHeights(t *testing.T) {
 func TestUnregisteredRouterWithMixedHops(t *testing.T) {
 	user, router, pda := testKey(1), testKey(2), testKey(3)
 	userA, pdaA, pdaB, pdaC, userC := testKey(4), testKey(5), testKey(6), testKey(7), testKey(8)
-	vA, vB1, vB2, vC, auth1, auth2, unknownVenue := testKey(9), testKey(10), testKey(11), testKey(12), testKey(13), testKey(14), testKey(15)
+	vA, vB1, vB2 := testKey(9), testKey(10), testKey(11)
+	vC, auth1, auth2, unknownVenue := testKey(12), testKey(13), testKey(14), testKey(15)
 	mA, mB, mC := testKey(16), testKey(17), testKey(18)
 
 	b := newTxBuilder(user)
@@ -180,7 +188,8 @@ func TestUnregisteredRouterWithMixedHops(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if info.TokenInMint != mA || info.TokenInAmount != 1000 || info.TokenOutMint != mC || info.TokenOutAmount != 200 || len(info.Swaps) != 2 {
+	if info.TokenInMint != mA || info.TokenInAmount != 1000 || info.TokenOutMint != mC ||
+		info.TokenOutAmount != 200 || len(info.Swaps) != 2 {
 		t.Errorf("got %d %s -> %d %s in %d swaps, want 1000 A -> 200 C in 2 swaps",
 			info.TokenInAmount, info.TokenInMint, info.TokenOutAmount, info.TokenOutMint, len(info.Swaps))
 	}
@@ -189,7 +198,8 @@ func TestUnregisteredRouterWithMixedHops(t *testing.T) {
 // Fees charged by a separate unregistered program are still reported when
 // they go to a known bot fee wallet or tip account.
 func TestSeparateFeeProgram(t *testing.T) {
-	user, feeProgram, userA, userB, vaultA, vaultB, poolAuth, mintA, mintB := testKey(1), testKey(2), testKey(3), testKey(4), testKey(5), testKey(6), testKey(7), testKey(8), testKey(9)
+	user, feeProgram, userA, userB := testKey(1), testKey(2), testKey(3), testKey(4)
+	vaultA, vaultB, poolAuth, mintA, mintB := testKey(5), testKey(6), testKey(7), testKey(8), testKey(9)
 	trojanFees := solana.MustPublicKeyFromBase58("9yMwSPk9mrXSN7yDHUuZurAh1sjbJsfpUqjZ7SvVtdco")
 	jito := solana.MustPublicKeyFromBase58("96gYZGLnJYVFmbjzopPSU6QiEV5fGqZNyN9nmNhvrZU5")
 
@@ -209,7 +219,8 @@ func TestSeparateFeeProgram(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(info.Fees) != 2 || info.Fees[0].Kind != FeeKindPlatform || info.Fees[1].Kind != FeeKindTip || !slices.Contains(info.Routers, "Trojan") {
+	if len(info.Fees) != 2 || info.Fees[0].Kind != FeeKindPlatform ||
+		info.Fees[1].Kind != FeeKindTip || !slices.Contains(info.Routers, "Trojan") {
 		t.Errorf("Fees = %+v, Routers = %q; want a Trojan fee and a Jito tip", info.Fees, info.Routers)
 	}
 }
@@ -233,15 +244,18 @@ func TestFallbackIgnoresRelayerTip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if info.Trader != user || info.TokenInMint != solana.WrappedSol || info.TokenInAmount != 200_000_000 || info.TokenOutAmount != 70 {
-		t.Errorf("got trader %s %d %s -> %d, want the user 200000000 SOL -> 70", info.Trader, info.TokenInAmount, info.TokenInMint, info.TokenOutAmount)
+	if info.Trader != user || info.TokenInMint != solana.WrappedSol ||
+		info.TokenInAmount != 200_000_000 || info.TokenOutAmount != 70 {
+		t.Errorf("got trader %s %d %s -> %d, want the user 200000000 SOL -> 70",
+			info.Trader, info.TokenInAmount, info.TokenInMint, info.TokenOutAmount)
 	}
 }
 
 // A relayer pays the fee for a swap on an unrecognised venue; the fallback
 // must attribute the swap to the user, not the relayer.
 func TestFallbackFindsRelayedTrader(t *testing.T) {
-	relayer, user, venue, userA, userB, vaultA, vaultB, mintA, mintB := testKey(1), testKey(2), testKey(3), testKey(4), testKey(5), testKey(6), testKey(7), testKey(8), testKey(9)
+	relayer, user, venue, userA := testKey(1), testKey(2), testKey(3), testKey(4)
+	userB, vaultA, vaultB, mintA, mintB := testKey(5), testKey(6), testKey(7), testKey(8), testKey(9)
 
 	b := newTxBuilder(relayer, user)
 	b.top(venue, []byte{1}, user) // no inner instructions recorded
@@ -256,13 +270,15 @@ func TestFallbackFindsRelayedTrader(t *testing.T) {
 		t.Fatal(err)
 	}
 	if info.Trader != user || info.TokenInAmount != 100 || info.TokenOutAmount != 70 {
-		t.Errorf("got trader %s %d -> %d, want the user 100 -> 70", info.Trader, info.TokenInAmount, info.TokenOutAmount)
+		t.Errorf("got trader %s %d -> %d, want the user 100 -> 70",
+			info.Trader, info.TokenInAmount, info.TokenOutAmount)
 	}
 }
 
 func TestFailedTransactionKeepsReason(t *testing.T) {
 	b := newTxBuilder(testKey(1))
-	tx := &solana.Transaction{Message: solana.Message{AccountKeys: b.keys, Header: solana.MessageHeader{NumRequiredSignatures: 1}}}
+	header := solana.MessageHeader{NumRequiredSignatures: 1}
+	tx := &solana.Transaction{Message: solana.Message{AccountKeys: b.keys, Header: header}}
 	_, err := ParseTransaction(tx, &rpc.TransactionMeta{Err: map[string]any{"InstructionError": []any{0, "Custom"}}})
 	if !errors.Is(err, ErrTransactionFailed) || err.Error() == ErrTransactionFailed.Error() {
 		t.Fatalf("err = %v, want ErrTransactionFailed with the on-chain reason", err)
@@ -304,7 +320,8 @@ func TestSummarize(t *testing.T) {
 			summarize(&info, tt.swaps)
 			if info.TokenInMint != tt.in || info.TokenOutMint != tt.out ||
 				info.TokenInAmount != tt.inAmount || info.TokenOutAmount != tt.outAmount {
-				t.Fatalf("got %s %d -> %s %d", info.TokenInMint, info.TokenInAmount, info.TokenOutMint, info.TokenOutAmount)
+				t.Fatalf("got %s %d -> %s %d",
+					info.TokenInMint, info.TokenInAmount, info.TokenOutMint, info.TokenOutAmount)
 			}
 		})
 	}

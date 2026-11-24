@@ -9,8 +9,10 @@ import (
 
 // Per-hop events of Jupiter v6, also emitted byte-identically by DFlow.
 var (
-	swapEvent  = txview.Discriminator{0x40, 0xc6, 0xcd, 0xe8, 0x26, 0x08, 0x71, 0xe2} // amm, in_mint, in_amt, out_mint, out_amt
-	swapsEvent = txview.Discriminator{0x98, 0x2f, 0x4e, 0xeb, 0xc0, 0x60, 0x6e, 0x6a} // vec of in_mint, in_amt, out_mint, out_amt, amm
+	// SwapEvent(amm, in_mint, in_amt, out_mint, out_amt), one per hop.
+	swapEvent = txview.Discriminator{0x40, 0xc6, 0xcd, 0xe8, 0x26, 0x08, 0x71, 0xe2}
+	// SwapsEvent(vec of in_mint, in_amt, out_mint, out_amt, amm), one per route.
+	swapsEvent = txview.Discriminator{0x98, 0x2f, 0x4e, 0xeb, 0xc0, 0x60, 0x6e, 0x6a}
 )
 
 // decodeSwapEvents decodes the per-hop events of a Jupiter or DFlow route, which also cover

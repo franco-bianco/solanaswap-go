@@ -54,7 +54,9 @@ func parsePumpFunTrade(data []byte) (pumpFunTrade, bool) {
 	r.U64()    // creator_fee_basis_points
 	t.creatorFee = r.U64()
 	if !r.OK() {
-		return pumpFunTrade{mint: t.mint, solAmount: t.solAmount, tokenAmount: t.tokenAmount, isBuy: t.isBuy, user: t.user}, true
+		return pumpFunTrade{
+			mint: t.mint, solAmount: t.solAmount, tokenAmount: t.tokenAmount, isBuy: t.isBuy, user: t.user,
+		}, true
 	}
 	t.hasFees = true
 

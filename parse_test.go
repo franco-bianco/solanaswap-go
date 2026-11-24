@@ -12,10 +12,8 @@ import (
 	"github.com/franco-bianco/solanaswap-go/v2"
 )
 
-// testCase is one entry of testdata/cases.json. Each case is a real
-// mainnet transaction (testdata/transactions/<file>) whose expected result
-// was derived independently from the raw transaction: inner instructions and
-// pre/post balances.
+// testCase is one entry of testdata/cases.json: a mainnet transaction whose expected
+// result was derived independently from its inner instructions and balances.
 type testCase struct {
 	File        string   `json:"file"`
 	Description string   `json:"description"`
@@ -120,7 +118,8 @@ func TestParseFixtures(t *testing.T) {
 						matches(strconv.FormatUint(s.OutputAmount, 10), want.OutAmount)
 				})
 				if !found {
-					t.Errorf("Swaps = %+v, want a %s leg %s %s -> %s %s", info.Swaps, want.Protocol, want.InAmount, want.InMint, want.OutAmount, want.OutMint)
+					t.Errorf("Swaps = %+v, want a %s leg %s %s -> %s %s",
+						info.Swaps, want.Protocol, want.InAmount, want.InMint, want.OutAmount, want.OutMint)
 				}
 			}
 			if info.Timestamp.IsZero() {

@@ -2,9 +2,8 @@ package solanaswap
 
 import "github.com/gagliardetto/solana-go"
 
-// tipAccounts are the published tip accounts of block engines and
-// transaction-landing services (official lists and documented addresses,
-// November 2026). Payments to them are reported as FeeKindTip.
+// tipAccounts are the published tip accounts of block engines and landing services
+// (November 2026). Payments to them are reported as FeeKindTip.
 var tipAccounts = keySet(
 	// Jito
 	"96gYZGLnJYVFmbjzopPSU6QiEV5fGqZNyN9nmNhvrZU5",
@@ -102,9 +101,8 @@ var tipAccounts = keySet(
 	"gmgnfGwFvnqZm4MtaunuVjErQNHdAC7H4wZYjBQkvKW",
 )
 
-// botFeeWallets maps the fee wallets of trading bots and wallet apps to
-// their names. Bots that call DEX programs directly from the user's wallet
-// are only recognisable by these payments.
+// botFeeWallets names the fee wallets of trading bots and wallet apps. Bots that call
+// DEX programs straight from the user's wallet are only recognisable by these payments.
 var botFeeWallets = map[solana.PublicKey]string{
 	solana.MustPublicKeyFromBase58("AVUCZyuT35YSuj4RH7fwiyPu82Djn2Hfg7y2ND2XcnZH"): "Photon",
 	solana.MustPublicKeyFromBase58("9yMwSPk9mrXSN7yDHUuZurAh1sjbJsfpUqjZ7SvVtdco"): "Trojan",

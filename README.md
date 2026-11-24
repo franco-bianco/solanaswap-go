@@ -13,7 +13,7 @@ trading-bot fees and tips.
 ## Install
 
 ```bash
-go get github.com/franco-bianco/solanaswap-go/v2@v2.0.0
+go get github.com/franco-bianco/solanaswap-go/v2@v2.0.1
 ```
 
 Requires Go 1.26 or newer (the minimum of `github.com/gagliardetto/solana-go`
@@ -121,12 +121,19 @@ What the amounts mean:
 - Trading-bot and aggregator fees, and tips to Jito and other landing
   services, are **not** part of the swap amounts. They are listed in `Fees`
   (`"platform"` or `"tip"`). The network fee is `TransactionFee`.
+- `Trader` is the wallet whose tokens were swapped. It is usually the fee
+  payer, but for relayer-paid and gasless swaps it is the signing user, and
+  for keeper-filled DCA and limit orders it is the order owner.
+- `InstructionIndex` and `InnerInstructionIndex` locate the instruction a
+  swap was decoded from (`-1` for the top level). Hops decoded from an
+  aggregator's events point at the aggregator instruction, and swaps inferred
+  from balance changes have both set to `-1`.
 
 ### Command line
 
 ```bash
-go run github.com/franco-bianco/solanaswap-go/v2/cmd/solanaswap@v2.0.0 -rpc "$SOLANA_RPC_URL" <signature>
-go run github.com/franco-bianco/solanaswap-go/v2/cmd/solanaswap@v2.0.0 -file tx.json
+go run github.com/franco-bianco/solanaswap-go/v2/cmd/solanaswap@v2.0.1 -rpc "$SOLANA_RPC_URL" <signature>
+go run github.com/franco-bianco/solanaswap-go/v2/cmd/solanaswap@v2.0.1 -file tx.json
 ```
 
 The public `api.mainnet-beta.solana.com` endpoint is heavily rate limited and
@@ -290,7 +297,8 @@ Astralane and Solana Vibe Station are reported as `"tip"` fees.
 
 | Version  | Import path                                          | Notes |
 |----------|------------------------------------------------------|-------|
-| `v2.0.0` | `github.com/franco-bianco/solanaswap-go/v2`          | Final release. Instruction-tree engine, new API. |
+| `v2.0.1` | `github.com/franco-bianco/solanaswap-go/v2`          | Final release. Internal cleanup; same API and results as v2.0.0. |
+| `v2.0.0` | `github.com/franco-bianco/solanaswap-go/v2`          | Instruction-tree engine, new API. |
 | `v1.1.0` | `github.com/franco-bianco/solanaswap-go/solanaswap-go` | Final v1 release (last v1 commit). |
 | `v1.0.0` | `github.com/franco-bianco/solanaswap-go/solanaswap-go` | |
 
@@ -326,3 +334,14 @@ Tests run against real mainnet transactions stored in
 `testdata/transactions`, with expected results in `testdata/cases.json`
 derived independently from each transaction's balances and inner
 instructions.
+
+Layout:
+
+- the module root holds the public API (`parse.go`, `types.go`), the swap
+  extraction engine (`extract.go`, `summary.go`), the program registry
+  (`programs.go`, `wallets.go`) and protocol-specific decoders
+  (`protocol_*.go`);
+- `internal/txview` decodes a raw transaction: lookup-table accounts, the
+  instruction tree, transfers, balance changes and emitted events;
+- `internal/borsh` reads Borsh-encoded event data;
+- `cmd/solanaswap` is the command-line tool.

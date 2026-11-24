@@ -6,25 +6,17 @@ import (
 	"github.com/gagliardetto/solana-go"
 )
 
-// SwapInfo summarises the swap activity of a transaction from the trader's
-// point of view. For multi-hop or split routes, TokenIn is the route's first
-// input and TokenOut its final output; the individual hops are in Swaps.
-//
-// A transaction holding unrelated swaps (for example a buy followed by a
-// sell, or fills for several users) is still summarised as one route from
-// the first swap's input to the last swap's output; inspect Swaps to tell
-// them apart.
+// SwapInfo summarises a transaction's swaps for the trader as one route: TokenIn is the
+// first input and TokenOut the final output. Unrelated swaps are told apart via Swaps.
 type SwapInfo struct {
 	Signatures []solana.Signature
 	Signers    []solana.PublicKey
 	Slot       uint64
-	// Timestamp is the block time. It is the zero time when the RPC node did
-	// not report one.
+	// Timestamp is the block time, or the zero time when the node did not report one.
 	Timestamp time.Time
 
-	// Trader is the wallet whose tokens were swapped. It is usually the fee
-	// payer, but differs for relayer-paid and gasless swaps (the signing
-	// user) and keeper-filled DCA and limit orders (the order owner).
+	// Trader is the wallet whose tokens were swapped: usually the fee payer, but the user
+	// for relayer-paid swaps and the order owner for keeper-filled orders.
 	Trader solana.PublicKey
 
 	// AMMs lists the venues that executed the swaps, in execution order.
@@ -45,25 +37,17 @@ type SwapInfo struct {
 
 	// TransactionFee is the network fee in lamports (base + priority fee).
 	TransactionFee uint64
-	// Fees lists payments the trader made outside the swap instructions,
-	// such as trading-bot fees and validator tips. They are not included in
-	// TokenInAmount.
+	// Fees lists payments made outside the swaps (bot fees, tips); TokenInAmount excludes them.
 	Fees []Fee
 }
 
-// Swap is a single trade executed by one DEX program, i.e. one hop of a route.
-//
-// InputAmount is what left the trader's side into the DEX instruction and
-// OutputAmount is what the DEX instruction paid out, so fees charged by the
-// DEX itself (LP, protocol and creator fees) are reflected in the amounts.
-// Amounts are as sent: Token-2022 transfer fees withheld from the recipient
-// are not deducted.
+// Swap is one hop of a route, executed by one DEX program. Amounts are as sent into and out
+// of the DEX, so DEX fees are included and Token-2022 transfer fees are not deducted.
 type Swap struct {
 	// Protocol is the human-readable venue name, e.g. "Raydium CPMM".
 	Protocol  string
 	ProgramID solana.PublicKey
-	// Trader is the authority that supplied the input tokens for this hop.
-	// For routed hops this can be a router-owned account.
+	// Trader is the authority that supplied this hop's input, possibly a router account.
 	Trader solana.PublicKey
 
 	InputMint     solana.PublicKey
@@ -74,12 +58,8 @@ type Swap struct {
 	OutputAmount   uint64
 	OutputDecimals uint8
 
-	// InstructionIndex is the index of the top-level instruction that
-	// contains the swap; InnerInstructionIndex is the index of the decoded
-	// instruction within that instruction's inner instructions, or -1 when
-	// it is the top-level instruction itself. Hops decoded from an
-	// aggregator's events point at the aggregator instruction. Both are -1
-	// for swaps inferred from balance changes.
+	// InstructionIndex is the top-level instruction holding the swap and InnerInstructionIndex
+	// its inner index (-1 at top level). Both are -1 for swaps inferred from balance changes.
 	InstructionIndex      int
 	InnerInstructionIndex int
 }
@@ -88,11 +68,9 @@ type Swap struct {
 type FeeKind string
 
 const (
-	// FeeKindTip is a tip to a block-engine or transaction-landing service
-	// (Jito, Nozomi, bloXroute, ...).
+	// FeeKindTip is a tip to a block engine or landing service (Jito, Nozomi, bloXroute, ...).
 	FeeKindTip FeeKind = "tip"
-	// FeeKindPlatform is any other payment made alongside a swap, typically
-	// a trading-bot, wallet-app or aggregator commission.
+	// FeeKindPlatform is any other payment, typically a bot, wallet or aggregator commission.
 	FeeKindPlatform FeeKind = "platform"
 )
 

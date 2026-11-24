@@ -1,13 +1,5 @@
-// Command solanaswap prints the swap contained in a Solana transaction.
-//
-// Usage:
-//
-//	solanaswap [-rpc URL] <signature>
-//	solanaswap -file tx.json
-//
-// The transaction is fetched with getTransaction from the given RPC endpoint
-// (default: $SOLANA_RPC_URL, then mainnet-beta), or read from a JSON file
-// holding a getTransaction result.
+// Command solanaswap prints the swap in a Solana transaction as JSON.
+// Usage: solanaswap [-rpc URL] <signature> | solanaswap -file tx.json
 package main
 
 import (
@@ -76,8 +68,7 @@ func fetchAndParse(endpoint, signature string, timeout time.Duration) (*solanasw
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	// Version 1 is the newest transaction format; requesting it also
-	// returns legacy and v0 transactions.
+	// Version 1 is the newest format; requesting it also returns legacy and v0 transactions.
 	maxVersion := uint64(1)
 	tx, err := rpc.New(endpoint).GetTransaction(ctx, sig, &rpc.GetTransactionOpts{
 		Encoding:                       solana.EncodingBase64,

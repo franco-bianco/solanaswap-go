@@ -38,7 +38,8 @@ func TestBuildTree(t *testing.T) {
 		}
 		root := v.Roots[0]
 		if len(root.Children) != 2 || len(root.Children[0].Children) != 2 || len(root.Children[1].Children) != 0 {
-			t.Fatalf("unexpected tree shape: %d children, first has %d", len(root.Children), len(root.Children[0].Children))
+			t.Fatalf("unexpected tree shape: %d children, first has %d",
+				len(root.Children), len(root.Children[0].Children))
 		}
 		if got := len(v.Flat); got != 6 {
 			t.Fatalf("Flat has %d instructions, want 6", got)
@@ -88,12 +89,14 @@ func TestDecodeTransfer(t *testing.T) {
 	}{
 		{
 			name: "transfer resolves mint from destination",
-			ix:   &Instruction{ProgramID: solana.TokenProgramID, Accounts: accounts(src, dst, auth), Data: amount(3, 500)},
+			ix: &Instruction{ProgramID: solana.TokenProgramID, Accounts: accounts(src, dst, auth),
+				Data: amount(3, 500)},
 			want: Transfer{Mint: mint, Amount: 500, Source: src, Destination: dst, Authority: auth},
 		},
 		{
 			name: "token-2022 transfer checked",
-			ix:   &Instruction{ProgramID: solana.Token2022ProgramID, Accounts: accounts(src, mint, dst, auth), Data: amount(12, 7, 6)},
+			ix: &Instruction{ProgramID: solana.Token2022ProgramID, Accounts: accounts(src, mint, dst, auth),
+				Data: amount(12, 7, 6)},
 			want: Transfer{Mint: mint, Amount: 7, Source: src, Destination: dst, Authority: auth},
 		},
 		{

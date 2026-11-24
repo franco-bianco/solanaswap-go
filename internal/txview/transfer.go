@@ -115,7 +115,8 @@ func (v *View) AccountFunding(payer solana.PublicKey) (deposited, refunded uint6
 					deposited += lamports
 				}
 			}
-		case isTokenProgram(ix.ProgramID) && len(ix.Data) > 0 && ix.Data[0] == tokenIxCloseAccount && len(ix.Accounts) >= 2:
+		case isTokenProgram(ix.ProgramID) && len(ix.Data) > 0 && ix.Data[0] == tokenIxCloseAccount &&
+			len(ix.Accounts) >= 2:
 			acct := ix.Accounts[0]
 			if ix.Accounts[1] != payer || closed[acct] {
 				continue

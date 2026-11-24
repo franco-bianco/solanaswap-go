@@ -201,7 +201,8 @@ func Programs() []Program {
 		out = append(out, s.Program)
 	}
 	slices.SortFunc(out, func(a, b Program) int {
-		return cmp.Or(cmp.Compare(a.Kind, b.Kind), cmp.Compare(a.Name, b.Name), cmp.Compare(a.ID.String(), b.ID.String()))
+		return cmp.Or(cmp.Compare(a.Kind, b.Kind), cmp.Compare(a.Name, b.Name),
+			cmp.Compare(a.ID.String(), b.ID.String()))
 	})
 	return out
 }
