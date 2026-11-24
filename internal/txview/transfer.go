@@ -60,9 +60,9 @@ func (v *View) decodeTokenTransfer(ix *Instruction) (Transfer, bool) {
 	case d[0] == tokenIxTransfer && len(d) >= 9 && len(ix.Accounts) >= 3:
 		t.Amount = binary.LittleEndian.Uint64(d[1:9])
 		t.Source, t.Destination, t.Authority = ix.Accounts[0], ix.Accounts[1], ix.Accounts[2]
-		t.Mint = v.TokenAccounts[t.Source].Mint
+		t.Mint = v.tokenAccounts[t.Source].Mint
 		if t.Mint.IsZero() {
-			t.Mint = v.TokenAccounts[t.Destination].Mint
+			t.Mint = v.tokenAccounts[t.Destination].Mint
 		}
 	case d[0] == tokenIxTransferChecked && len(d) >= 9 && len(ix.Accounts) >= 4,
 		d[0] == tokenIxTransferFeeExt && len(d) >= 10 && d[1] == transferFeeExtWithFee && len(ix.Accounts) >= 4:
@@ -124,7 +124,7 @@ func (v *View) AccountFunding(payer solana.PublicKey) (deposited, refunded uint6
 			closed[acct] = true
 			// A wrapped SOL refund also returns the token balance, which balance changes already cover.
 			rent, _ := v.lamports(acct)
-			if v.TokenAccounts[acct].Mint == solana.WrappedSol {
+			if v.tokenAccounts[acct].Mint == solana.WrappedSol {
 				rent -= min(rent, v.preTokenAmount(acct))
 			}
 			refunded += rent

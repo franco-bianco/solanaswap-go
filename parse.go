@@ -84,7 +84,7 @@ func ParseTransaction(tx *solana.Transaction, meta *rpc.TransactionMeta) (*SwapI
 
 	info := &SwapInfo{
 		Signatures:     slices.Clone(tx.Signatures),
-		Signers:        slices.Clone(v.Signers),
+		Signers:        append([]solana.PublicKey(nil), v.Signers...),
 		TransactionFee: meta.Fee,
 		Trader:         e.trader(),
 		Fees:           e.collectFees(),

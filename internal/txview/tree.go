@@ -15,7 +15,7 @@ type Instruction struct {
 
 	OuterIndex int // index of the top-level instruction this node belongs to
 	InnerIndex int // index among that instruction's inner instructions, -1 at top level
-	Depth      int // invocation stack height, 1 at top level
+	depth      int // invocation stack height, 1 at top level
 
 	Parent   *Instruction
 	Children []*Instruction
@@ -68,17 +68,17 @@ func IsInfrastructure(id solana.PublicKey) bool { return infrastructure[id] }
 
 // buildTree links top-level and inner instructions using the stack heights the node recorded.
 func (v *View) buildTree() error {
-	inner := make(map[int][]rpc.CompiledInstruction, len(v.Meta.InnerInstructions))
-	for _, set := range v.Meta.InnerInstructions {
+	inner := make(map[int][]rpc.CompiledInstruction, len(v.meta.InnerInstructions))
+	for _, set := range v.meta.InnerInstructions {
 		inner[int(set.Index)] = append(inner[int(set.Index)], set.Instructions...)
 	}
 
-	for i, outer := range v.Tx.Message.Instructions {
+	for i, outer := range v.tx.Message.Instructions {
 		root, err := v.newInstruction(outer.ProgramIDIndex, outer.Accounts, outer.Data)
 		if err != nil {
 			return err
 		}
-		root.OuterIndex, root.InnerIndex, root.Depth = i, -1, 1
+		root.OuterIndex, root.InnerIndex, root.depth = i, -1, 1
 		v.Roots = append(v.Roots, root)
 		v.Flat = append(v.Flat, root)
 
@@ -101,10 +101,10 @@ func (v *View) buildTree() error {
 				case lastProgram != nil && v.sharesAccount(ix, lastProgram):
 					ix.Parent = lastProgram
 				}
-				ix.Depth = ix.Parent.Depth + 1
+				ix.depth = ix.Parent.depth + 1
 			} else {
-				ix.Depth = int(in.StackHeight)
-				for len(stack) > 1 && stack[len(stack)-1].Depth >= ix.Depth {
+				ix.depth = int(in.StackHeight)
+				for len(stack) > 1 && stack[len(stack)-1].depth >= ix.depth {
 					stack = stack[:len(stack)-1]
 				}
 				ix.Parent = stack[len(stack)-1]

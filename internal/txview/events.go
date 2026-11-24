@@ -48,7 +48,7 @@ func (v *View) mapLogEvents() {
 	events := make(map[*Instruction][][]byte)
 	var stack []*Instruction
 	next := 0
-	for _, line := range v.Meta.LogMessages {
+	for _, line := range v.meta.LogMessages {
 		if payload, ok := strings.CutPrefix(line, "Program data: "); ok {
 			if len(stack) > 0 {
 				for chunk := range strings.FieldsSeq(payload) {

@@ -14,6 +14,7 @@ type Reader struct {
 	ok  bool
 }
 
+// NewReader returns a Reader over b.
 func NewReader(b []byte) *Reader { return &Reader{buf: b, ok: true} }
 
 // OK reports whether every read so far was within the data.
@@ -29,6 +30,7 @@ func (r *Reader) take(n int) []byte {
 	return b
 }
 
+// U8 reads one byte.
 func (r *Reader) U8() uint8 {
 	if b := r.take(1); b != nil {
 		return b[0]
@@ -36,8 +38,10 @@ func (r *Reader) U8() uint8 {
 	return 0
 }
 
+// Bool reads a one-byte boolean.
 func (r *Reader) Bool() bool { return r.U8() != 0 }
 
+// U32 reads a little-endian uint32.
 func (r *Reader) U32() uint32 {
 	if b := r.take(4); b != nil {
 		return binary.LittleEndian.Uint32(b)
@@ -45,6 +49,7 @@ func (r *Reader) U32() uint32 {
 	return 0
 }
 
+// U64 reads a little-endian uint64.
 func (r *Reader) U64() uint64 {
 	if b := r.take(8); b != nil {
 		return binary.LittleEndian.Uint64(b)
@@ -52,8 +57,10 @@ func (r *Reader) U64() uint64 {
 	return 0
 }
 
+// I64 reads a little-endian int64.
 func (r *Reader) I64() int64 { return int64(r.U64()) }
 
+// Pubkey reads a 32-byte public key.
 func (r *Reader) Pubkey() solana.PublicKey {
 	if b := r.take(32); b != nil {
 		return solana.PublicKeyFromBytes(b)

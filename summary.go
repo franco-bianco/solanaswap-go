@@ -52,8 +52,8 @@ func netOr(a, b, fallback uint64) uint64 {
 	return fallback
 }
 
-// collectFees returns user-side payments outside DEX invocations (bot fees, tips) and labels the
-// bots that received them. Unknown recipients count only when paid beside a swap.
+// collectFees returns user-side payments outside DEX invocations and labels bots paid. Other than
+// known tip and bot accounts, payments must pass besideSwap, so deposits elsewhere are not fees.
 func (e *extractor) collectFees() []Fee {
 	var fees []Fee
 	for _, ix := range e.v.Flat {
@@ -113,8 +113,8 @@ func (e *extractor) fallbackSwap(fees []Fee) (Swap, bool) {
 	return Swap{}, false
 }
 
-// balanceSwap infers a swap from trader's balance changes: exactly one asset must fall and one rise.
-// SOL is corrected for the network fee, rent, and fees the trader (or a router) paid.
+// balanceSwap infers a swap from trader's balance changes: exactly one asset must fall and one rise,
+// after correcting SOL for the network fee and rent and adding back fees the trader or a router paid.
 func (e *extractor) balanceSwap(trader solana.PublicKey, fees []Fee) (Swap, bool) {
 	delta := make(map[solana.PublicKey]int64)
 	for h, change := range e.v.TokenChanges() {
@@ -125,7 +125,7 @@ func (e *extractor) balanceSwap(trader solana.PublicKey, fees []Fee) (Swap, bool
 
 	sol := e.v.LamportChange(trader)
 	if trader == e.v.FeePayer() {
-		sol += int64(e.v.Meta.Fee)
+		sol += int64(e.v.Fee)
 	}
 	deposited, refunded := e.v.AccountFunding(trader)
 	sol += int64(deposited) - int64(refunded)

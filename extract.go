@@ -16,8 +16,8 @@ type extractor struct {
 
 	// swapRoot maps every instruction inside a DEX invocation to that invocation.
 	swapRoot map[*txview.Instruction]*txview.Instruction
-	// userAuthorities are the signers plus every authority that moves tokens outside a DEX
-	// invocation (routers and bots holding funds in transit).
+	// userAuthorities are the signers plus authorities moving tokens outside DEX invocations
+	// (routers, bots); pool authorities only ever sign inside their own DEX.
 	userAuthorities map[solana.PublicKey]bool
 	// swapDebited holds accounts debited inside DEX invocations: route staging accounts, not fee recipients.
 	swapDebited map[solana.PublicKey]bool
@@ -280,9 +280,7 @@ func (e *extractor) dominantMint(transfers []txview.Transfer, exclude solana.Pub
 		tot := totals[t.Mint]
 		tot.amount += t.Amount
 		tot.count++
-		_, src := e.v.TokenAccounts[t.Source]
-		_, dst := e.v.TokenAccounts[t.Destination]
-		tot.token = tot.token || src || dst
+		tot.token = tot.token || e.v.IsTokenAccount(t.Source) || e.v.IsTokenAccount(t.Destination)
 	}
 	var best solana.PublicKey
 	for _, m := range order {

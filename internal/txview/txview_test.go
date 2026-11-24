@@ -75,7 +75,7 @@ func TestBuildTree(t *testing.T) {
 
 func TestDecodeTransfer(t *testing.T) {
 	src, mint, dst, auth := key(1), key(2), key(3), key(4)
-	v := &View{TokenAccounts: map[solana.PublicKey]TokenAccount{dst: {Mint: mint}}}
+	v := &View{tokenAccounts: map[solana.PublicKey]tokenAccount{dst: {Mint: mint}}}
 	amount := func(tag byte, n uint64, extra ...byte) []byte {
 		d := append([]byte{tag}, binary.LittleEndian.AppendUint64(nil, n)...)
 		return append(d, extra...)
