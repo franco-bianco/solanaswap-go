@@ -5,15 +5,16 @@ import (
 	"slices"
 
 	"github.com/gagliardetto/solana-go"
+
+	"github.com/franco-bianco/solanaswap-go/v2/internal/txview"
 )
 
 // ProgramKind classifies the programs the parser recognises.
 type ProgramKind int
 
 const (
-	// KindDEX is a program that executes swaps against its own liquidity:
-	// AMMs, CLMMs, order books, proprietary market makers and launchpad
-	// bonding curves.
+	// KindDEX swaps against its own liquidity: AMMs, CLMMs, order books,
+	// proprietary market makers and launchpad bonding curves.
 	KindDEX ProgramKind = iota + 1
 	// KindAggregator routes a swap through one or more DEX programs.
 	KindAggregator
@@ -43,24 +44,20 @@ type Program struct {
 	Kind ProgramKind
 }
 
-// swapDecoder extracts the swaps executed by ix, an invocation of a known
-// program. It returns nil when ix is not a swap (for example an
-// add-liquidity or admin instruction) or when it cannot decode it, in which
-// case the generic transfer-based decoder is used for DEX programs.
-type swapDecoder func(e *extractor, ix *instruction) []Swap
+// swapDecoder decodes the swaps of one invocation of a known program. It returns nil for
+// non-swap instructions or on failure; DEX programs then fall back to transfer decoding.
+type swapDecoder func(e *extractor, ix *txview.Instruction) []Swap
 
 type programSpec struct {
 	Program
 	decode swapDecoder
 }
 
-// Program IDs with dedicated handling. Use LookupProgram and Programs to
-// inspect the registry.
+// Program IDs with dedicated handling.
 var (
 	pumpFunProgramID          = solana.MustPublicKeyFromBase58("6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P")
 	pumpSwapProgramID         = solana.MustPublicKeyFromBase58("pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA")
 	moonshotProgramID         = solana.MustPublicKeyFromBase58("MoonCVVNZFSYkqNXP6bxHLPL6QQJiMagDL3qcqUQTrG")
-	raydiumLaunchLabProgramID = solana.MustPublicKeyFromBase58("LanMV9sAd7wArD4vJFi2qDdfnVhFxYSUg6eADduJ3uj")
 	jupiterV6ProgramID        = solana.MustPublicKeyFromBase58("JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4")
 	jupiterOrderEngineID      = solana.MustPublicKeyFromBase58("61DFfeTKM7trxYcPQCM78bJ794ddZprZpAwAnLiwTpYH")
 	jupiterRecurringProgramID = solana.MustPublicKeyFromBase58("DCA265Vj8a9CEuX1eb1LWRnDT7uK6q1xMipnNyatn23M")
@@ -68,15 +65,14 @@ var (
 	dFlowProgramID            = solana.MustPublicKeyFromBase58("DF1ow4tspfHX9JwWJsAb9epbkA8hmpSEAtxXy1V27QBH")
 )
 
-// registry lists the recognised programs. Program IDs were verified on
-// chain (executable, with recent swap activity) in November 2026; retired
-// programs are kept so historical transactions stay labelled.
+// registry lists the recognised programs, verified on chain in November 2026.
+// Retired programs stay so historical transactions keep their labels.
 var registry = newRegistry(
 	// Launchpads and bonding curves.
-	programSpec{Program{"Pump.fun", pumpFunProgramID, KindDEX}, decodePumpFun},
-	programSpec{Program{"PumpSwap", pumpSwapProgramID, KindDEX}, decodePumpSwap},
-	programSpec{Program{"Moonshot", moonshotProgramID, KindDEX}, decodeMoonshot},
-	programSpec{Program{"Raydium LaunchLab", raydiumLaunchLabProgramID, KindDEX}, nil},
+	programSpec{Program{"Pump.fun", pumpFunProgramID, KindDEX}, (*extractor).decodePumpFun},
+	programSpec{Program{"PumpSwap", pumpSwapProgramID, KindDEX}, (*extractor).decodePumpSwap},
+	programSpec{Program{"Moonshot", moonshotProgramID, KindDEX}, (*extractor).decodeMoonshot},
+	dex("Raydium LaunchLab", "LanMV9sAd7wArD4vJFi2qDdfnVhFxYSUg6eADduJ3uj"),
 	dex("Meteora DBC", "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN"),
 	dex("Boop.fun", "boop8hVGQGqehUK2iVEMEnMrL5RbjywRzHKBmBE7ry4"),
 	dex("Heaven", "HEAVENoP2qxoeuF8Dj2oT1GHEnu49U5mJYkdeC8BAX2o"),
@@ -136,24 +132,22 @@ var registry = newRegistry(
 	dex("Obsidian", "HBVw6bZtcCaezhcBrmfyXBSBRWCdv72271xQ4GPvms2z"),
 	dex("Riptide", "riptK81hDxhe5pW5jSzSM9iRA8azgEgLJ4dXkPtBS7j"),
 	dex("Denali", "DNL1tgEj3nJovHw9jtyCCQD3arssCJzkmpDizknwzey4"),
-	programSpec{Program{"Jupiter RFQ", jupiterOrderEngineID, KindDEX}, decodeJupiterRFQ},
+	programSpec{Program{"Jupiter RFQ", jupiterOrderEngineID, KindDEX}, (*extractor).decodeJupiterRFQ},
 
 	// Aggregators and order programs.
-	programSpec{Program{"Jupiter", jupiterV6ProgramID, KindAggregator}, decodeSwapEvents},
-	programSpec{Program{"DFlow", dFlowProgramID, KindAggregator}, decodeSwapEvents},
+	programSpec{Program{"Jupiter", jupiterV6ProgramID, KindAggregator}, (*extractor).decodeSwapEvents},
+	programSpec{Program{"DFlow", dFlowProgramID, KindAggregator}, (*extractor).decodeSwapEvents},
 	aggregator("OKX DEX Router v2", "proVF4pMXVaYqmy4NjniPh4pqKNfMmsihgd4wdkCX3u"),
 	aggregator("OKX DEX Router", "6m2CDdhRgxpH4WjvdzxAYbGxwdGUz5MziiL5jek2kBma"), // closed 2026-07
 	aggregator("Titan", "T1TANpTeScyeqVzzgNViGDNrkQ6qHz9KrSBS4aNXvGT"),
 	aggregator("Raydium Router", "routeUGWgWzqBWFcrCfv8tritsqukccJPu3q5GPP3xS"),
-	// Keeper-filled order programs swap through an aggregator on the
-	// order owner's behalf.
+	// Keeper-filled order programs swap through an aggregator for the order owner.
 	programSpec{Program: Program{"Jupiter Recurring", jupiterRecurringProgramID, KindAggregator}},
 	aggregator("Jupiter DCA", "DCAK36VfExkPdAkYUQg6ewgxyinvcEyPLyHjRbmveKFw"), // retired
 	programSpec{Program: Program{"Jupiter Trigger", jupiterTriggerProgramID, KindAggregator}},
 	aggregator("Jupiter Limit Order", "jupoNjAxXgZ4rjzxzPMP4oxduvQsQtZzyknqvzYNrNu"),
 
-	// Trading bots. Several bots only charge their fee through these
-	// programs and call the DEX directly; see also botFeeWallets.
+	// Trading bots. Some only charge their fee here and call the DEX directly; see botFeeWallets.
 	bot("Axiom", "FLASHX8DrLbgeR8FcfNV1F5krxYcYMUdBkrP1EPBtxB9"),
 	bot("GMGN", "GMgnVFR8Jb39LoXsEVzb3DvBy3ywCmdmJquHUy1Lrkqb"),
 	bot("Photon", "BSfD6SHZigAfDWSjzD5Q41jw8LmKwtmjskPH9XW1mrRW"),
@@ -185,7 +179,7 @@ func bot(name, id string) programSpec {
 func newRegistry(specs ...programSpec) map[solana.PublicKey]programSpec {
 	m := make(map[solana.PublicKey]programSpec, len(specs))
 	for _, s := range specs {
-		// Names may repeat (a bot's current and retired programs).
+		// Names may repeat (a bot's current and retired programs); IDs may not.
 		if _, dup := m[s.ID]; dup {
 			panic("solanaswap: duplicate program " + s.ID.String())
 		}

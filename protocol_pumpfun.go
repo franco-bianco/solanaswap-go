@@ -1,12 +1,19 @@
 package solanaswap
 
-import "github.com/gagliardetto/solana-go"
+import (
+	"github.com/gagliardetto/solana-go"
 
-var pumpFunTradeEvent = discriminator{189, 219, 127, 211, 78, 230, 97, 238}
+	"github.com/franco-bianco/solanaswap-go/v2/internal/borsh"
+	"github.com/franco-bianco/solanaswap-go/v2/internal/txview"
+)
 
-// pumpFunTrade holds the TradeEvent fields the parser uses. The event has
-// grown over time; fields after virtualTokenReserves are absent in older
-// transactions and decode as zero.
+var pumpFunTradeEvent = txview.Discriminator{189, 219, 127, 211, 78, 230, 97, 238}
+
+// legacyPumpFunFeeBps is the fixed protocol fee charged before TradeEvent reported fees.
+const legacyPumpFunFeeBps = 100
+
+// pumpFunTrade holds the TradeEvent fields the parser uses. Fields after the reserves were added
+// over time and decode as zero in older transactions.
 type pumpFunTrade struct {
 	mint        solana.PublicKey
 	solAmount   uint64
@@ -14,73 +21,64 @@ type pumpFunTrade struct {
 	isBuy       bool
 	user        solana.PublicKey
 
-	// hasFees is false for events recorded before the fee fields were
-	// added; the protocol fee was then a fixed 1% of solAmount.
-	hasFees bool
-	// fee is the total protocol fee, including the buyback share.
-	fee        uint64
+	hasFees    bool   // false before fee fields existed (legacy fixed fee)
+	fee        uint64 // total protocol fee, including the buyback share
 	creatorFee uint64
-	// quoteMint and quoteAmount are set for coins quoted in a token other
-	// than SOL.
-	quoteMint   solana.PublicKey
+
+	quoteMint   solana.PublicKey // set for coins quoted in a token other than SOL
 	quoteAmount uint64
 }
 
 func parsePumpFunTrade(data []byte) (pumpFunTrade, bool) {
-	r := newBorshReader(data)
+	r := borsh.NewReader(data)
 	t := pumpFunTrade{
-		mint:        r.pubkey(),
-		solAmount:   r.u64(),
-		tokenAmount: r.u64(),
-		isBuy:       r.bool(),
-		user:        r.pubkey(),
+		mint:        r.Pubkey(),
+		solAmount:   r.U64(),
+		tokenAmount: r.U64(),
+		isBuy:       r.Bool(),
+		user:        r.Pubkey(),
 	}
-	r.i64() // timestamp
-	r.u64() // virtual_sol_reserves
-	r.u64() // virtual_token_reserves
-	if !r.ok {
+	r.I64() // timestamp
+	r.U64() // virtual_sol_reserves
+	r.U64() // virtual_token_reserves
+	if !r.OK() {
 		return t, false
 	}
 
-	r.u64()    // real_sol_reserves
-	r.u64()    // real_token_reserves
-	r.pubkey() // fee_recipient
-	r.u64()    // fee_basis_points
-	t.fee = r.u64()
-	r.pubkey() // creator
-	r.u64()    // creator_fee_basis_points
-	t.creatorFee = r.u64()
-	if !r.ok {
+	r.U64()    // real_sol_reserves
+	r.U64()    // real_token_reserves
+	r.Pubkey() // fee_recipient
+	r.U64()    // fee_basis_points
+	t.fee = r.U64()
+	r.Pubkey() // creator
+	r.U64()    // creator_fee_basis_points
+	t.creatorFee = r.U64()
+	if !r.OK() {
 		return pumpFunTrade{mint: t.mint, solAmount: t.solAmount, tokenAmount: t.tokenAmount, isBuy: t.isBuy, user: t.user}, true
 	}
 	t.hasFees = true
 
-	r.bool()              // track_volume
-	r.u64()               // total_unclaimed_tokens
-	r.u64()               // total_claimed_tokens
-	r.u64()               // current_sol_volume
-	r.i64()               // last_update_timestamp
-	r.string()            // ix_name
-	r.bool()              // mayhem_mode
-	r.u64()               // cashback_fee_basis_points
-	r.u64()               // cashback
-	r.u64()               // buyback_fee_basis_points
-	r.u64()               // buyback_fee (part of fee)
-	r.skip(r.u32(), 32+2) // shareholders: address, share_bps
-	quoteMint := r.pubkey()
-	quoteAmount := r.u64()
-	if r.ok {
+	r.Bool()              // track_volume
+	r.U64()               // total_unclaimed_tokens
+	r.U64()               // total_claimed_tokens
+	r.U64()               // current_sol_volume
+	r.I64()               // last_update_timestamp
+	r.Str()               // ix_name
+	r.Bool()              // mayhem_mode
+	r.U64()               // cashback_fee_basis_points
+	r.U64()               // cashback
+	r.U64()               // buyback_fee_basis_points
+	r.U64()               // buyback_fee (part of fee)
+	r.Skip(r.U32(), 32+2) // shareholders: address, share_bps
+	quoteMint := r.Pubkey()
+	quoteAmount := r.U64()
+	if r.OK() {
 		t.quoteMint, t.quoteAmount = quoteMint, quoteAmount
 	}
 	return t, true
 }
 
-// legacyPumpFunFeeBps is the protocol fee that applied to every trade
-// before TradeEvent reported fees.
-const legacyPumpFunFeeBps = 100
-
-// fees returns the fees the program charges on top of (buys) or deducts
-// from (sells) the curve amount.
+// fees returns the fees charged on top of a buy or deducted from a sell's curve amount.
 func (t pumpFunTrade) fees(curveAmount uint64) uint64 {
 	if !t.hasFees {
 		return curveAmount * legacyPumpFunFeeBps / 10_000
@@ -88,20 +86,15 @@ func (t pumpFunTrade) fees(curveAmount uint64) uint64 {
 	return t.fee + t.creatorFee
 }
 
-// decodePumpFun decodes Pump.fun bonding-curve trades from TradeEvent.
-//
-// Buys pay the quote through ordinary transfers, so the input is measured
-// from the trader's outgoing transfers (curve price plus protocol and creator
-// fees). Sells of SOL-quoted coins pay out by moving lamports directly, which
-// leaves no transfer to measure, so the output is the event's curve amount
-// minus the fees the program deducts.
-func decodePumpFun(e *extractor, ix *instruction) []Swap {
-	// Since August 2024 the event is emitted both through self-CPI and as a
-	// log line; earlier transactions only have the log line.
-	events := cpiEvents(ix, pumpFunTradeEvent)
+// decodePumpFun decodes bonding-curve trades from TradeEvent. Amounts come from the user's
+// transfers; SOL sells move lamports directly, so they use the event amount minus fees.
+func (e *extractor) decodePumpFun(ix *txview.Instruction) []Swap {
+	// Emitted through self-CPI since August 2024; older transactions only log it.
+	events := ix.CPIEvents(pumpFunTradeEvent)
 	if len(events) == 0 {
-		events = e.v.logEventsOf(ix, pumpFunTradeEvent)
+		events = e.v.LogEvents(ix, pumpFunTradeEvent)
 	}
+	paidOut, paidIn := e.userFlows(ix)
 	var swaps []Swap
 	for _, data := range events {
 		t, ok := parsePumpFunTrade(data)
@@ -115,14 +108,14 @@ func decodePumpFun(e *extractor, ix *instruction) []Swap {
 
 		s := Swap{Trader: t.user}
 		if t.isBuy {
-			paid := e.userOutflow(ix, quoteMint)
+			paid := sumOf(paidOut, quoteMint)
 			if paid == 0 {
 				paid = quoteAmount + t.fees(quoteAmount)
 			}
 			s.InputMint, s.InputAmount = quoteMint, paid
 			s.OutputMint, s.OutputAmount = t.mint, t.tokenAmount
 		} else {
-			received := e.userInflow(ix, quoteMint)
+			received := sumOf(paidIn, quoteMint)
 			if received == 0 {
 				received = quoteAmount - min(quoteAmount, t.fees(quoteAmount))
 			}
@@ -132,28 +125,4 @@ func decodePumpFun(e *extractor, ix *instruction) []Swap {
 		swaps = append(swaps, s)
 	}
 	return swaps
-}
-
-// userOutflow sums transfers of mint inside ix that a user-side authority
-// sends to a non-user account.
-func (e *extractor) userOutflow(ix *instruction, mint solana.PublicKey) uint64 {
-	var sum uint64
-	for _, t := range e.v.subtreeTransfers(ix) {
-		if t.mint == mint && e.isUserSide(t.authority) && !e.isUserSide(t.destination) {
-			sum += t.amount
-		}
-	}
-	return sum
-}
-
-// userInflow sums transfers of mint inside ix that pay a user-side account
-// from a non-user authority.
-func (e *extractor) userInflow(ix *instruction, mint solana.PublicKey) uint64 {
-	var sum uint64
-	for _, t := range e.v.subtreeTransfers(ix) {
-		if t.mint == mint && !e.isUserSide(t.authority) && e.isUserSide(t.destination) {
-			sum += t.amount
-		}
-	}
-	return sum
 }

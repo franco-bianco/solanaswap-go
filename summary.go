@@ -4,14 +4,12 @@ import (
 	"slices"
 
 	"github.com/gagliardetto/solana-go"
+
+	"github.com/franco-bianco/solanaswap-go/v2/internal/txview"
 )
 
-// summarize fills the route-level fields of info from its swaps.
-//
-// TokenIn is the first swap's input and TokenOut the last swap's output.
-// Amounts are netted across hops so split routes (A→B twice) add up and
-// intermediate tokens of multi-hop routes (A→B→C) cancel out. When TokenIn
-// and TokenOut are the same mint (arbitrage), the gross amounts are used.
+// summarize fills the route fields of info: first input to last output, netted across hops.
+// For arbitrage (same mint in and out) the gross amounts are used.
 func summarize(info *SwapInfo, swaps []Swap) {
 	first, last := swaps[0], swaps[len(swaps)-1]
 	info.TokenInMint, info.TokenInDecimals = first.InputMint, first.InputDecimals
@@ -54,25 +52,20 @@ func netOr(a, b, fallback uint64) uint64 {
 	return fallback
 }
 
-// collectFees returns payments from the user side (the trader, or a router
-// holding the trader's funds in transit) to accounts outside the user side
-// that are not part of any DEX invocation: trading-bot and aggregator fees,
-// and tips. To keep unrelated activity out (deposits into other protocols),
-// a payment must be a top-level instruction, made by a registered bot or
-// aggregator program, or made inside a program call that also performs a
-// swap.
+// collectFees returns user-side payments outside DEX invocations (bot fees, tips) and labels the
+// bots that received them. Unknown recipients count only when paid beside a swap.
 func (e *extractor) collectFees() []Fee {
 	var fees []Fee
-	for _, ix := range e.v.flat {
-		t := ix.transfer
-		if t == nil || ix.swapRoot != nil || !e.isUserSide(t.authority) {
+	for _, ix := range e.v.Flat {
+		t := ix.Transfer
+		if t == nil || e.swapRoot[ix] != nil || !e.isUserSide(t.Authority) {
 			continue
 		}
-		if e.isUserSide(t.destination) || e.swapDebited[t.destination] {
+		if e.isUserSide(t.Destination) || e.swapDebited[t.Destination] {
 			continue
 		}
-		recipient := e.v.ownerOf(t.destination)
-		_, botWallet := botFeeWallets[recipient]
+		recipient := e.v.OwnerOf(t.Destination)
+		bot, botWallet := botFeeWallets[recipient]
 		if !tipAccounts[recipient] && !botWallet && !e.besideSwap(ix) {
 			continue
 		}
@@ -80,61 +73,65 @@ func (e *extractor) collectFees() []Fee {
 		if tipAccounts[recipient] {
 			kind = FeeKindTip
 		}
-		fees = append(fees, Fee{Kind: kind, Mint: t.mint, Amount: t.amount, Recipient: recipient, payer: t.authority})
+		if botWallet {
+			e.addRouter(bot)
+		}
+		fees = append(fees, Fee{Kind: kind, Mint: t.Mint, Amount: t.Amount, Recipient: recipient, payer: t.Authority})
 	}
 	return fees
 }
 
-// besideSwap reports whether a transfer instruction is top-level, made by a
-// registered bot or aggregator, or made by a program whose invocation also
-// contains a swap.
-func (e *extractor) besideSwap(ix *instruction) bool {
-	caller := ix.parent
-	for caller != nil && infrastructurePrograms[caller.programID] {
-		caller = caller.parent
+// besideSwap reports whether a payment is top-level, made by a registered program, or made
+// by a program whose invocation also contains a swap.
+func (e *extractor) besideSwap(ix *txview.Instruction) bool {
+	caller := ix.Parent
+	for caller != nil && txview.IsInfrastructure(caller.ProgramID) {
+		caller = caller.Parent
 	}
 	if caller == nil {
 		return true
 	}
-	if _, ok := registry[caller.programID]; ok {
+	if _, ok := registry[caller.ProgramID]; ok {
 		return true
 	}
 	found := false
-	caller.walk(func(n *instruction) bool {
-		found = found || n.swapRoot != nil
+	caller.Walk(func(n *txview.Instruction) bool {
+		found = found || e.swapRoot[n] != nil
 		return !found
 	})
 	return found
 }
 
-// labelBots adds the trading bots whose fee wallets received fees.
-func (e *extractor) labelBots(fees []Fee) {
-	for _, f := range fees {
-		if bot, ok := botFeeWallets[f.Recipient]; ok {
-			e.addRouter(bot)
+// fallbackSwap infers a swap from balance changes when no swap instruction was recognised,
+// trying each signer so relayer-paid swaps are attributed to the user.
+func (e *extractor) fallbackSwap(fees []Fee) (Swap, bool) {
+	for _, signer := range e.v.Signers {
+		if s, ok := e.balanceSwap(signer, fees); ok {
+			return s, true
 		}
 	}
+	return Swap{}, false
 }
 
-// balanceSwap infers a swap from the trader's balance changes. It is the
-// fallback for venues this package does not recognise: exactly one asset
-// must decrease and one increase. Native SOL changes are corrected for the
-// network fee, tips and bot fees, and account rent deposits and refunds.
+// balanceSwap infers a swap from trader's balance changes: exactly one asset must fall and one rise.
+// SOL is corrected for the network fee, rent, and fees the trader (or a router) paid.
 func (e *extractor) balanceSwap(trader solana.PublicKey, fees []Fee) (Swap, bool) {
-	delta := e.v.tokenBalanceDelta(trader)
-
-	sol := e.v.lamportDelta(trader)
-	if trader == e.v.feePayer() {
-		sol += int64(e.v.meta.Fee)
+	delta := make(map[solana.PublicKey]int64)
+	for h, change := range e.v.TokenChanges() {
+		if h.Owner == trader {
+			delta[h.Mint] += change
+		}
 	}
-	deposited, refunded := e.v.accountFunding(trader)
+
+	sol := e.v.LamportChange(trader)
+	if trader == e.v.FeePayer() {
+		sol += int64(e.v.Meta.Fee)
+	}
+	deposited, refunded := e.v.AccountFunding(trader)
 	sol += int64(deposited) - int64(refunded)
 	delta[solana.WrappedSol] += sol
-	// Fees came out of the trader's balance only if the trader (or a
-	// router holding the trader's funds) paid them, not another signer
-	// such as a relayer.
 	for _, f := range fees {
-		if f.payer == trader || !e.v.signers[f.payer] {
+		if f.payer == trader || !e.v.IsSigner(f.payer) {
 			delta[f.Mint] += int64(f.Amount)
 		}
 	}
@@ -151,8 +148,7 @@ func (e *extractor) balanceSwap(trader solana.PublicKey, fees []Fee) (Swap, bool
 	if len(in) != 1 || len(out) != 1 {
 		return Swap{}, false
 	}
-	// Lamport noise below 0.0001 SOL is fee rounding, not a trade.
-	const dust = 100_000
+	const dust = 100_000 // lamport noise below 0.0001 SOL is fee rounding, not a trade
 	if (in[0] == solana.WrappedSol && -delta[in[0]] < dust) || (out[0] == solana.WrappedSol && delta[out[0]] < dust) {
 		return Swap{}, false
 	}
@@ -164,31 +160,21 @@ func (e *extractor) balanceSwap(trader solana.PublicKey, fees []Fee) (Swap, bool
 		Trader:                trader,
 		InputMint:             in[0],
 		InputAmount:           uint64(-delta[in[0]]),
-		InputDecimals:         e.decimals(in[0]),
+		InputDecimals:         e.v.Decimals[in[0]],
 		OutputMint:            out[0],
 		OutputAmount:          uint64(delta[out[0]]),
-		OutputDecimals:        e.decimals(out[0]),
+		OutputDecimals:        e.v.Decimals[out[0]],
 		InstructionIndex:      -1,
 		InnerInstructionIndex: -1,
 	}, true
 }
 
-// infrastructurePrograms never execute swaps themselves.
-var infrastructurePrograms = map[solana.PublicKey]bool{
-	solana.SystemProgramID:                    true,
-	solana.ComputeBudget:                      true,
-	solana.TokenProgramID:                     true,
-	solana.Token2022ProgramID:                 true,
-	solana.SPLAssociatedTokenAccountProgramID: true,
-	solana.MemoProgramID:                      true,
-}
-
-// outermostProgram returns the first top-level program that is not
-// infrastructure, which is the best label available for an unrecognised swap.
+// outermostProgram returns the first top-level program that is not infrastructure,
+// the best label for an unrecognised swap.
 func (e *extractor) outermostProgram() solana.PublicKey {
-	for _, root := range e.v.roots {
-		if !infrastructurePrograms[root.programID] {
-			return root.programID
+	for _, root := range e.v.Roots {
+		if !txview.IsInfrastructure(root.ProgramID) {
+			return root.ProgramID
 		}
 	}
 	return solana.PublicKey{}

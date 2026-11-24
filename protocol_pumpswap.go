@@ -1,30 +1,27 @@
 package solanaswap
 
-import "github.com/gagliardetto/solana-go"
+import (
+	"github.com/gagliardetto/solana-go"
 
-// PumpSwap multi_hop_swap trades through two or more pump pools or bonding
-// curves in one instruction. After 16 fixed accounts it takes five accounts
-// per hop: base mint, quote mint, pool (or bonding curve), base vault and
-// quote vault. Intermediate coins move vault to vault and never reach the
-// user.
-var pumpSwapMultiHop = discriminator{0x2b, 0x64, 0x49, 0x13, 0xe9, 0xf6, 0x6f, 0x94}
+	"github.com/franco-bianco/solanaswap-go/v2/internal/txview"
+)
+
+// PumpSwap multi_hop_swap takes 16 fixed accounts, then per hop: base mint, quote mint,
+// pool, base vault, quote vault.
+var pumpSwapMultiHop = txview.Discriminator{0x2b, 0x64, 0x49, 0x13, 0xe9, 0xf6, 0x6f, 0x94}
 
 const (
 	pumpSwapMultiHopFixedAccounts = 16
 	pumpSwapMultiHopHopAccounts   = 5
 )
 
-// decodePumpSwap splits multi-hop instructions into one Swap per hop. Each
-// hop's input is what was transferred into its vault of the input mint and
-// its output what its vault of the output mint paid to the next hop or the
-// user (excluding protocol and creator fees). Other instructions,
-// and hops through SOL bonding curves (which move native SOL without
-// transfers), are left to the transfer-based decoder.
-func decodePumpSwap(e *extractor, ix *instruction) []Swap {
-	if !hasDiscriminator(ix.data, pumpSwapMultiHop) {
+// decodePumpSwap splits a multi-hop swap into one Swap per hop, measured at the hop's vaults.
+// Other instructions, and hops through SOL bonding curves, use the transfer-based decoder.
+func (e *extractor) decodePumpSwap(ix *txview.Instruction) []Swap {
+	if !pumpSwapMultiHop.Matches(ix.Data) {
 		return nil
 	}
-	rest := len(ix.accounts) - pumpSwapMultiHopFixedAccounts
+	rest := len(ix.Accounts) - pumpSwapMultiHopFixedAccounts
 	if rest < 2*pumpSwapMultiHopHopAccounts || rest%pumpSwapMultiHopHopAccounts != 0 {
 		return nil
 	}
@@ -33,16 +30,16 @@ func decodePumpSwap(e *extractor, ix *instruction) []Swap {
 		return nil
 	}
 
-	transfers := e.v.subtreeTransfers(ix)
+	transfers := ix.Transfers()
 	vaults := make(map[solana.PublicKey]bool)
-	for off := pumpSwapMultiHopFixedAccounts; off < len(ix.accounts); off += pumpSwapMultiHopHopAccounts {
-		vaults[ix.accounts[off+3]], vaults[ix.accounts[off+4]] = true, true
+	for off := pumpSwapMultiHopFixedAccounts; off < len(ix.Accounts); off += pumpSwapMultiHopHopAccounts {
+		vaults[ix.Accounts[off+3]], vaults[ix.Accounts[off+4]] = true, true
 	}
 
 	held := whole.InputMint
 	var swaps []Swap
-	for off := pumpSwapMultiHopFixedAccounts; off < len(ix.accounts); off += pumpSwapMultiHopHopAccounts {
-		hop := ix.accounts[off : off+pumpSwapMultiHopHopAccounts]
+	for off := pumpSwapMultiHopFixedAccounts; off < len(ix.Accounts); off += pumpSwapMultiHopHopAccounts {
+		hop := ix.Accounts[off : off+pumpSwapMultiHopHopAccounts]
 		baseMint, quoteMint, baseVault, quoteVault := hop[0], hop[1], hop[3], hop[4]
 
 		// Holding the quote mint makes the hop a buy, holding the base a sell.
@@ -53,13 +50,14 @@ func decodePumpSwap(e *extractor, ix *instruction) []Swap {
 			return nil
 		}
 
+		// Output counts only payouts to the next hop or the user, not protocol or creator fees.
 		var in, out uint64
 		for _, t := range transfers {
 			switch {
-			case t.mint == inMint && t.destination == inVault:
-				in += t.amount
-			case t.mint == outMint && t.source == outVault && (vaults[t.destination] || e.isUserSide(t.destination)):
-				out += t.amount
+			case t.Mint == inMint && t.Destination == inVault:
+				in += t.Amount
+			case t.Mint == outMint && t.Source == outVault && (vaults[t.Destination] || e.isUserSide(t.Destination)):
+				out += t.Amount
 			}
 		}
 		if in == 0 || out == 0 {

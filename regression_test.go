@@ -1,125 +1,25 @@
 package solanaswap
 
 import (
-	"encoding/base64"
-	"encoding/binary"
 	"errors"
 	"slices"
-	"strconv"
 	"testing"
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 )
 
-// txBuilder assembles synthetic transactions for shapes that are hard to
-// find on chain. Every account starts with 1 SOL.
-type txBuilder struct {
-	keys     []solana.PublicKey
-	index    map[solana.PublicKey]uint16
-	signers  uint8
-	outer    []solana.CompiledInstruction
-	inner    map[int][]rpc.CompiledInstruction
-	pre      []uint64
-	post     []uint64
-	preTok   []rpc.TokenBalance
-	postTok  []rpc.TokenBalance
-	logLines []string
-}
-
-func newTxBuilder(signers ...solana.PublicKey) *txBuilder {
-	b := &txBuilder{index: map[solana.PublicKey]uint16{}, inner: map[int][]rpc.CompiledInstruction{}}
-	for _, s := range signers {
-		b.key(s)
-	}
-	b.signers = uint8(len(signers))
-	return b
-}
-
-func (b *txBuilder) key(k solana.PublicKey) uint16 {
-	if i, ok := b.index[k]; ok {
-		return i
-	}
-	b.index[k] = uint16(len(b.keys))
-	b.keys = append(b.keys, k)
-	b.pre = append(b.pre, 1_000_000_000)
-	b.post = append(b.post, 1_000_000_000)
-	return b.index[k]
-}
-
-func (b *txBuilder) keyIndexes(ks []solana.PublicKey) []uint16 {
-	out := make([]uint16, len(ks))
-	for i, k := range ks {
-		out[i] = b.key(k)
-	}
-	return out
-}
-
-func (b *txBuilder) top(program solana.PublicKey, data []byte, accounts ...solana.PublicKey) int {
-	b.outer = append(b.outer, solana.CompiledInstruction{ProgramIDIndex: b.key(program), Accounts: b.keyIndexes(accounts), Data: data})
-	return len(b.outer) - 1
-}
-
-func (b *txBuilder) cpi(outer int, height uint16, program solana.PublicKey, data []byte, accounts ...solana.PublicKey) {
-	b.inner[outer] = append(b.inner[outer], rpc.CompiledInstruction{
-		ProgramIDIndex: b.key(program), Accounts: b.keyIndexes(accounts), Data: data, StackHeight: height,
-	})
-}
-
-// tokenTransfer adds an SPL Token Transfer CPI.
-func (b *txBuilder) tokenTransfer(outer int, height uint16, amount uint64, from, to, authority solana.PublicKey) {
-	b.cpi(outer, height, solana.TokenProgramID, binary.LittleEndian.AppendUint64([]byte{3}, amount), from, to, authority)
-}
-
-// balance records a token account's pre and post balance.
-func (b *txBuilder) balance(account, mint, owner solana.PublicKey, pre, post uint64) {
-	o := owner
-	for i, amount := range []uint64{pre, post} {
-		tb := rpc.TokenBalance{AccountIndex: b.key(account), Mint: mint, Owner: &o,
-			UiTokenAmount: &rpc.UiTokenAmount{Amount: strconv.FormatUint(amount, 10), Decimals: 6}}
-		if i == 0 {
-			b.preTok = append(b.preTok, tb)
-		} else {
-			b.postTok = append(b.postTok, tb)
-		}
-	}
-}
-
-func (b *txBuilder) parse(t *testing.T) (*SwapInfo, error) {
-	t.Helper()
-	tx := &solana.Transaction{Message: solana.Message{
-		AccountKeys:  b.keys,
-		Header:       solana.MessageHeader{NumRequiredSignatures: b.signers},
-		Instructions: b.outer,
-	}}
-	meta := &rpc.TransactionMeta{Fee: 5000, PreBalances: b.pre, PostBalances: b.post,
-		PreTokenBalances: b.preTok, PostTokenBalances: b.postTok, LogMessages: b.logLines}
-	for i := range b.outer {
-		if ins, ok := b.inner[i]; ok {
-			meta.InnerInstructions = append(meta.InnerInstructions, rpc.InnerInstruction{Index: uint16(i), Instructions: ins})
-		}
-	}
-	return ParseTransaction(tx, meta)
-}
-
-func testKey(n int) solana.PublicKey {
-	var k solana.PublicKey
-	binary.LittleEndian.PutUint64(k[:], uint64(n)+1000)
-	k[31] = 7
-	return k
-}
-
 var raydiumCPMM = solana.MustPublicKeyFromBase58("CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C")
 
-// An unregistered custodial router that takes a SOL fee and forwards the
-// output from its own account must not hide the registered DEX it calls.
+// An unregistered custodial router that takes a SOL fee and forwards the output
+// from its own account must not hide the registered DEX it calls.
 func TestUnknownWrapperDoesNotHideDEX(t *testing.T) {
 	user, feeWallet, router, pda := testKey(1), testKey(2), testKey(3), testKey(4)
 	userWSOL, vaultA, vaultB, pdaB, userB, poolAuth, mintB := testKey(5), testKey(6), testKey(7), testKey(8), testKey(9), testKey(10), testKey(11)
 
 	b := newTxBuilder(user)
 	o := b.top(router, []byte{9}, user, pda)
-	b.cpi(o, 2, solana.SystemProgramID, binary.LittleEndian.AppendUint64([]byte{2, 0, 0, 0}, 10_000_000), user, feeWallet)
+	b.cpi(o, 2, solana.SystemProgramID, sysTransfer(10_000_000), user, feeWallet)
 	b.cpi(o, 2, raydiumCPMM, []byte{1}, user, poolAuth)
 	b.tokenTransfer(o, 3, 1_000_000_000, userWSOL, vaultA, user)
 	b.tokenTransfer(o, 3, 500, vaultB, pdaB, poolAuth)
@@ -145,22 +45,8 @@ func TestUnknownWrapperDoesNotHideDEX(t *testing.T) {
 	}
 }
 
-func moonshotSellEvent(tokens, collateral uint64, sender solana.PublicKey) string {
-	d := append([]byte{}, moonshotTradeEvent[:]...)
-	for _, v := range []uint64{tokens, collateral, 0, 0, 0} {
-		d = binary.LittleEndian.AppendUint64(d, v)
-	}
-	d = append(d, make([]byte, 32)...) // curve
-	d = append(d, solana.WrappedSol[:]...)
-	d = append(d, sender[:]...)
-	d = append(d, 1)          // sell
-	d = append(d, 0, 0, 0, 0) // empty label
-	return base64.StdEncoding.EncodeToString(d)
-}
-
-// Moonshot sells pay SOL by lamport changes and are decoded from a log
-// event. Program-written log lines must not derail the log replay, and
-// without logs the balance fallback must still find the swap.
+// Moonshot sells are decoded from a log event; program-written log lines must not derail
+// the log replay, and without logs the balance fallback must still find the swap.
 func TestMoonshotSellLogs(t *testing.T) {
 	user, userATA, curveATA, curve, mint := testKey(1), testKey(2), testKey(3), testKey(4), testKey(5)
 	ms, tk := moonshotProgramID.String(), solana.TokenProgramID.String()
@@ -233,13 +119,8 @@ func TestDepositIsNotAFee(t *testing.T) {
 	}
 }
 
-func sysTransfer(lamports uint64) []byte {
-	return binary.LittleEndian.AppendUint64([]byte{2, 0, 0, 0}, lamports)
-}
-
-// Transactions recorded before stack heights existed: a DEX invoked by a
-// bot program must still own the transfers that follow it, but not the
-// bot's own fee payment afterwards.
+// Without stack heights, a DEX called by a bot must own the transfers after it,
+// but not the bot's own fee payment.
 func TestMissingStackHeights(t *testing.T) {
 	user, bot, userA, userB, vaultA, vaultB, poolAuth, mintA, mintB := testKey(1), testKey(2), testKey(3), testKey(4), testKey(5), testKey(6), testKey(7), testKey(8), testKey(9)
 	trojanFees := solana.MustPublicKeyFromBase58("9yMwSPk9mrXSN7yDHUuZurAh1sjbJsfpUqjZ7SvVtdco")
@@ -388,41 +269,6 @@ func TestFailedTransactionKeepsReason(t *testing.T) {
 	}
 }
 
-func TestParseLogFrame(t *testing.T) {
-	id := moonshotProgramID.String()
-	tests := []struct {
-		line string
-		kind string
-		ok   bool
-	}{
-		{"Program " + id + " invoke [2]", "invoke", true},
-		{"Program " + id + " success", "success", true},
-		{"Program " + id + " failed: custom program error: 0x1", "failed", true},
-		{"Program " + id + " consumed 100 of 200 compute units", "", false},
-		{"Program log: swap success", "", false},
-		{"Program log: invoke [2]", "", false},
-		{"Program return: " + id + " AQ==", "", false},
-	}
-	for _, tt := range tests {
-		_, kind, ok := parseLogFrame(tt.line)
-		if ok != tt.ok || kind != tt.kind {
-			t.Errorf("parseLogFrame(%q) = %q, %v; want %q, %v", tt.line, kind, ok, tt.kind, tt.ok)
-		}
-	}
-}
-
-// A crafted vector length must not panic (it used to on 32-bit platforms).
-func TestBorshReaderRejectsHugeLengths(t *testing.T) {
-	r := newBorshReader([]byte{1, 2, 3})
-	r.skip(0xffffffff, 34)
-	if r.ok {
-		t.Fatal("skip past the end must fail")
-	}
-	if r.take(-1) != nil {
-		t.Fatal("negative take must fail")
-	}
-}
-
 func TestProgramsDeterministic(t *testing.T) {
 	first := Programs()
 	for range 20 {
@@ -432,5 +278,34 @@ func TestProgramsDeterministic(t *testing.T) {
 				t.Fatalf("Programs() order changed at %d: %v vs %v", i, first[i], again[i])
 			}
 		}
+	}
+}
+
+func TestSummarize(t *testing.T) {
+	a, b, c := testKey(1), testKey(2), testKey(3)
+	hop := func(in solana.PublicKey, inAmt uint64, out solana.PublicKey, outAmt uint64) Swap {
+		return Swap{Protocol: "X", InputMint: in, InputAmount: inAmt, OutputMint: out, OutputAmount: outAmt}
+	}
+	tests := []struct {
+		name                string
+		swaps               []Swap
+		in, out             solana.PublicKey
+		inAmount, outAmount uint64
+	}{
+		{"single", []Swap{hop(a, 10, b, 20)}, a, b, 10, 20},
+		{"multi-hop", []Swap{hop(a, 10, b, 20), hop(b, 20, c, 30)}, a, c, 10, 30},
+		{"split", []Swap{hop(a, 10, b, 20), hop(a, 5, b, 9)}, a, b, 15, 29},
+		{"split then merge", []Swap{hop(a, 10, b, 20), hop(b, 12, c, 5), hop(b, 8, c, 4)}, a, c, 10, 9},
+		{"arbitrage cycle", []Swap{hop(a, 10, b, 20), hop(b, 20, a, 11)}, a, a, 10, 11},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var info SwapInfo
+			summarize(&info, tt.swaps)
+			if info.TokenInMint != tt.in || info.TokenOutMint != tt.out ||
+				info.TokenInAmount != tt.inAmount || info.TokenOutAmount != tt.outAmount {
+				t.Fatalf("got %s %d -> %s %d", info.TokenInMint, info.TokenInAmount, info.TokenOutMint, info.TokenOutAmount)
+			}
+		})
 	}
 }

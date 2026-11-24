@@ -1,21 +1,21 @@
 package solanaswap
 
-import "github.com/gagliardetto/solana-go"
+import (
+	"github.com/gagliardetto/solana-go"
 
-// Per-hop swap events of Jupiter v6 (also emitted, byte-identical, by
-// DFlow). Route instructions of the v1 family emit one SwapEvent per hop:
-// (amm, input_mint, input_amount, output_mint, output_amount). The *_v2
-// route instructions emit a single SwapsEvent with a vector of
-// (input_mint, input_amount, output_mint, output_amount, amm).
-var (
-	swapEvent  = discriminator{0x40, 0xc6, 0xcd, 0xe8, 0x26, 0x08, 0x71, 0xe2}
-	swapsEvent = discriminator{0x98, 0x2f, 0x4e, 0xeb, 0xc0, 0x60, 0x6e, 0x6a}
+	"github.com/franco-bianco/solanaswap-go/v2/internal/borsh"
+	"github.com/franco-bianco/solanaswap-go/v2/internal/txview"
 )
 
-// decodeSwapEvents decodes the per-hop events of a Jupiter or DFlow route.
-// They report the amounts the aggregator measured around each DEX
-// invocation, which also covers venues this package does not recognise.
-func decodeSwapEvents(e *extractor, ix *instruction) []Swap {
+// Per-hop events of Jupiter v6, also emitted byte-identically by DFlow.
+var (
+	swapEvent  = txview.Discriminator{0x40, 0xc6, 0xcd, 0xe8, 0x26, 0x08, 0x71, 0xe2} // amm, in_mint, in_amt, out_mint, out_amt
+	swapsEvent = txview.Discriminator{0x98, 0x2f, 0x4e, 0xeb, 0xc0, 0x60, 0x6e, 0x6a} // vec of in_mint, in_amt, out_mint, out_amt, amm
+)
+
+// decodeSwapEvents decodes the per-hop events of a Jupiter or DFlow route, which also cover
+// venues this package does not recognise.
+func (e *extractor) decodeSwapEvents(ix *txview.Instruction) []Swap {
 	trader := e.routeTrader(ix)
 	var swaps []Swap
 	add := func(s Swap) {
@@ -25,24 +25,24 @@ func decodeSwapEvents(e *extractor, ix *instruction) []Swap {
 			swaps = append(swaps, s)
 		}
 	}
-	for _, data := range cpiEvents(ix, swapEvent) {
-		r := newBorshReader(data)
+	for _, data := range ix.CPIEvents(swapEvent) {
+		r := borsh.NewReader(data)
 		var s Swap
-		s.ProgramID = r.pubkey()
-		s.InputMint, s.InputAmount = r.pubkey(), r.u64()
-		s.OutputMint, s.OutputAmount = r.pubkey(), r.u64()
-		if r.ok {
+		s.ProgramID = r.Pubkey()
+		s.InputMint, s.InputAmount = r.Pubkey(), r.U64()
+		s.OutputMint, s.OutputAmount = r.Pubkey(), r.U64()
+		if r.OK() {
 			add(s)
 		}
 	}
-	for _, data := range cpiEvents(ix, swapsEvent) {
-		r := newBorshReader(data)
-		for range r.u32() {
+	for _, data := range ix.CPIEvents(swapsEvent) {
+		r := borsh.NewReader(data)
+		for range r.U32() {
 			var s Swap
-			s.InputMint, s.InputAmount = r.pubkey(), r.u64()
-			s.OutputMint, s.OutputAmount = r.pubkey(), r.u64()
-			s.ProgramID = r.pubkey()
-			if !r.ok {
+			s.InputMint, s.InputAmount = r.Pubkey(), r.U64()
+			s.OutputMint, s.OutputAmount = r.Pubkey(), r.U64()
+			s.ProgramID = r.Pubkey()
+			if !r.OK() {
 				break
 			}
 			add(s)
@@ -51,42 +51,39 @@ func decodeSwapEvents(e *extractor, ix *instruction) []Swap {
 	return swaps
 }
 
-// routeTrader returns the first transaction signer that funds the route,
-// falling back to the fee payer.
-func (e *extractor) routeTrader(ix *instruction) solana.PublicKey {
-	for _, t := range e.v.subtreeTransfers(ix) {
-		if e.v.signers[t.authority] {
-			return t.authority
+// routeTrader returns the first signer that funds the route, else the fee payer.
+func (e *extractor) routeTrader(ix *txview.Instruction) solana.PublicKey {
+	for _, t := range ix.Transfers() {
+		if e.v.IsSigner(t.Authority) {
+			return t.Authority
 		}
 	}
-	return e.v.feePayer()
+	return e.v.FeePayer()
 }
 
-// Jupiter's order engine settles RFQ quotes (JupiterZ, used by Ultra):
-// fill(input_amount: u64, output_amount: u64, expire_at: i64) with
-// accounts [taker, maker, ...]. Both parties sign, so the transfer-based
-// decoder cannot tell them apart; the instruction names the taker.
-var jupiterRFQFill = discriminator{0xa8, 0x60, 0xb7, 0xa3, 0x5c, 0x0a, 0x28, 0xa0}
+// Jupiter's order engine settles RFQ quotes with fill(input_amount, output_amount, expire_at)
+// and accounts [taker, maker, ...]. Both sign, so only the instruction names the taker.
+var jupiterRFQFill = txview.Discriminator{0xa8, 0x60, 0xb7, 0xa3, 0x5c, 0x0a, 0x28, 0xa0}
 
 const jupiterRFQTaker = 0
 
-func decodeJupiterRFQ(e *extractor, ix *instruction) []Swap {
-	if !hasDiscriminator(ix.data, jupiterRFQFill) {
+func (e *extractor) decodeJupiterRFQ(ix *txview.Instruction) []Swap {
+	if !jupiterRFQFill.Matches(ix.Data) {
 		return nil
 	}
-	r := newBorshReader(ix.data[8:])
-	inAmount, outAmount := r.u64(), r.u64()
-	taker := ix.account(jupiterRFQTaker)
-	if !r.ok || taker.IsZero() {
+	r := borsh.NewReader(ix.Data[8:])
+	inAmount, outAmount := r.U64(), r.U64()
+	taker := ix.Account(jupiterRFQTaker)
+	if !r.OK() || taker.IsZero() {
 		return nil
 	}
 	var inMint, outMint solana.PublicKey
-	for _, t := range e.v.subtreeTransfers(ix) {
+	for _, t := range ix.Transfers() {
 		switch {
-		case inMint.IsZero() && t.authority == taker:
-			inMint = t.mint
-		case outMint.IsZero() && t.authority != taker:
-			outMint = t.mint
+		case inMint.IsZero() && t.Authority == taker:
+			inMint = t.Mint
+		case outMint.IsZero() && t.Authority != taker:
+			outMint = t.Mint
 		}
 	}
 	if inMint.IsZero() || outMint.IsZero() {

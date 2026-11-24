@@ -5,27 +5,24 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"time"
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
+
+	"github.com/franco-bianco/solanaswap-go/v2/internal/txview"
 )
 
 var (
 	// ErrNoSwap is returned when a transaction contains no swap.
 	ErrNoSwap = errors.New("solanaswap: transaction contains no swap")
-	// ErrTransactionFailed is returned for transactions that failed on
-	// chain; they move no tokens.
+	// ErrTransactionFailed is returned for transactions that failed on chain; they move no tokens.
 	ErrTransactionFailed = errors.New("solanaswap: transaction failed on chain")
-	// ErrInvalidTransaction is returned when the transaction or its metadata
-	// is missing or malformed.
+	// ErrInvalidTransaction is returned when the transaction or its metadata is missing or malformed.
 	ErrInvalidTransaction = errors.New("solanaswap: invalid transaction")
 )
 
-// Parse extracts the swap from a transaction returned by the getTransaction
-// RPC method. Fetch it with encoding "json" or "base64" and
-// MaxSupportedTransactionVersion set to 1 (the newest format), otherwise the
-// node rejects versioned transactions.
+// Parse extracts the swap from a getTransaction result. Fetch it with encoding "json" or
+// "base64" and MaxSupportedTransactionVersion 1, or the node rejects versioned transactions.
 func Parse(tx *rpc.GetTransactionResult) (*SwapInfo, error) {
 	if tx == nil || tx.Transaction == nil {
 		return nil, fmt.Errorf("%w: missing transaction", ErrInvalidTransaction)
@@ -42,14 +39,14 @@ func Parse(tx *rpc.GetTransactionResult) (*SwapInfo, error) {
 		return nil, err
 	}
 	info.Slot = tx.Slot
-	info.Timestamp = blockTime(tx.BlockTime)
+	if tx.BlockTime != nil {
+		info.Timestamp = tx.BlockTime.Time().UTC()
+	}
 	return info, nil
 }
 
-// ParseJSON parses the JSON of a getTransaction result, either the bare
-// "result" object or a complete JSON-RPC response containing it. It lets
-// callers parse transactions obtained from any source (files, gRPC bridges,
-// webhooks) without an RPC client.
+// ParseJSON parses a getTransaction result as JSON, either the bare result object
+// or a complete JSON-RPC response containing it.
 func ParseJSON(data []byte) (*SwapInfo, error) {
 	var envelope struct {
 		Result json.RawMessage `json:"result"`
@@ -64,31 +61,34 @@ func ParseJSON(data []byte) (*SwapInfo, error) {
 	return Parse(&tx)
 }
 
-// ParseTransaction extracts the swap from a decoded transaction and its
-// status metadata, for callers that obtain transactions from sources other
-// than getTransaction (for example Geyser/Yellowstone streams). For v0
-// transactions meta.LoadedAddresses must hold the addresses resolved from
-// lookup tables. Slot and Timestamp are left unset.
+// ParseTransaction extracts the swap from a decoded transaction, e.g. from a Geyser stream.
+// For v0 transactions meta.LoadedAddresses must be set. Slot and Timestamp are left unset.
 func ParseTransaction(tx *solana.Transaction, meta *rpc.TransactionMeta) (*SwapInfo, error) {
-	if meta != nil && meta.Err != nil {
+	switch {
+	case meta != nil && meta.Err != nil:
 		return nil, fmt.Errorf("%w: %v", ErrTransactionFailed, meta.Err)
+	case tx == nil:
+		return nil, fmt.Errorf("%w: transaction is nil", ErrInvalidTransaction)
+	case meta == nil:
+		return nil, fmt.Errorf("%w: transaction meta is nil", ErrInvalidTransaction)
 	}
-	v, err := newTxView(tx, meta)
+	v, err := txview.New(tx, meta)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %w", ErrInvalidTransaction, err)
 	}
 
 	e := newExtractor(v)
-	e.run()
+	for _, root := range v.Roots {
+		e.visit(root)
+	}
 
 	info := &SwapInfo{
 		Signatures:     slices.Clone(tx.Signatures),
-		Signers:        v.signerList(),
+		Signers:        slices.Clone(v.Signers),
 		TransactionFee: meta.Fee,
 		Trader:         e.trader(),
 		Fees:           e.collectFees(),
 	}
-	e.labelBots(info.Fees)
 	info.Routers = e.routers
 
 	swaps := e.swaps
@@ -106,24 +106,4 @@ func ParseTransaction(tx *solana.Transaction, meta *rpc.TransactionMeta) (*SwapI
 	// Payouts to an order owner who did not sign are not fees.
 	info.Fees = slices.DeleteFunc(info.Fees, func(f Fee) bool { return f.Recipient == info.Trader })
 	return info, nil
-}
-
-// fallbackSwap infers a swap from balance changes when no swap instruction
-// was recognised, trying each signer (fee payer first) so that swaps paid
-// for by a relayer are attributed to the user.
-func (e *extractor) fallbackSwap(fees []Fee) (Swap, bool) {
-	for _, signer := range e.v.signerList() {
-		if s, ok := e.balanceSwap(signer, fees); ok {
-			return s, true
-		}
-	}
-	return Swap{}, false
-}
-
-// blockTime converts an optional RPC block time.
-func blockTime(t *solana.UnixTimeSeconds) time.Time {
-	if t == nil {
-		return time.Time{}
-	}
-	return t.Time().UTC()
 }
